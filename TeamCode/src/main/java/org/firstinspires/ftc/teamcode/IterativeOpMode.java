@@ -114,29 +114,59 @@ public class IterativeOpMode extends OpMode
         // Setup a variable for each drive wheel to save power level for telemetry
         double leftFrontPower;
         double rightFrontPower;
+        double leftRearPower;
+        double rightRearPower;
 
         // Choose to drive using either Tank Mode, or POV Mode
         // Comment out the method that's not used.  The default below is POV.
 
         // POV Mode uses left stick to go forward, and right stick to turn.
         // - This uses basic math to combine motions and is easier to drive straight.
-        double drive = -gamepad1.left_stick_y;
-        double turn  =  gamepad1.right_stick_x;
-        leftFrontPower = Range.clip(drive + turn, -1.0, 1.0) ;
-        rightFrontPower = Range.clip(drive - turn, -1.0, 1.0) ;
 
         // Tank Mode uses one stick to control each wheel.
         // - This requires no math, but it is hard to drive forward slowly and keep straight.
         // leftPower  = -gamepad1.left_stick_y ;
         // rightPower = -gamepad1.right_stick_y ;
 
+
+        double x  = gamepad1.left_stick_x;
+        double y = -gamepad1.left_stick_y;
+        double r = gamepad1.right_stick_x;
+
+        //beginning of big brain -------------------------------------------------------------------.
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!REPLACE WITH INFO FROM GYRO SENSOR TO CORRECT OFFSET TO ROBOT ALWAYS GOES IN DIRECTION OF STICK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        double angleFromGyro = 1.0; //in radians?
+        double desiredAngle = (x < 0)? Math.atan(y / x) + Math.PI : Math.atan(y / x);
+        double correctedAngle = desiredAngle - angleFromGyro;
+
+        //correct x
+        x = Math.sin(correctedAngle);
+        //correct y
+        y = Math.cos(correctedAngle);
+
+        //back to smooth brain ---------------------------------------------------------------------
+
+        double drive = 1 - y;
+        double strafe = x;
+        double rotate = r;
+
+
+        leftFrontPower = Range.clip(drive + strafe + rotate, -1.0, 1.0);
+        rightFrontPower = Range.clip(drive - strafe + rotate, -1.0, 1.0);
+        leftRearPower = Range.clip(drive - strafe - rotate, -1.0, 1.0);
+        rightRearPower = Range.clip(drive + strafe - rotate, -1.0, 1.0);
+
+
         // Send calculated power to wheels
         leftFrontDrive.setPower(leftFrontPower);
         rightFrontDrive.setPower(rightFrontPower);
+        leftRearDrive.setPower(leftRearPower);
+        rightRearDrive.setPower(rightRearPower);
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftFrontPower, rightFrontPower);
+        telemetry.addData("Motors", "x (%.2f), y (%.2f)", x, y);
     }
 
     /*
@@ -144,6 +174,10 @@ public class IterativeOpMode extends OpMode
      */
     @Override
     public void stop() {
+        leftFrontDrive.setPower(0.0);
+        rightFrontDrive.setPower(0.0);
+        leftRearDrive.setPower(0.0);
+        rightRearDrive.setPower(0.0);
     }
 
 }
