@@ -29,12 +29,18 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 /**
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -52,7 +58,7 @@ import com.qualcomm.robotcore.util.Range;
 
 @TeleOp(name="Basic: Iterative OpMode", group="Iterative Opmode")
 //@Disabled
-public class IterativeOpMode extends OpMode
+public class TeleOpDriving extends OpMode
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -60,6 +66,7 @@ public class IterativeOpMode extends OpMode
     private DcMotor rightFrontDrive = null;
     private DcMotor leftRearDrive = null;
     private DcMotor rightRearDrive = null;
+    private BNO055IMU gyro = null;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -86,6 +93,20 @@ public class IterativeOpMode extends OpMode
         leftRearDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightRearDrive.setDirection(DcMotor.Direction.REVERSE);
+
+        telemetry.addData("Mode", "calibrating...");
+        telemetry.update();
+
+        // make sure the imu gyro is calibrated before continuing.  <--- I don't think this is necessary because of iterative op mode. so just dont press play for 25 ms
+        //while (!gyro.isGyroCalibrated())
+        //{
+            
+        //}
+
+        telemetry.addData("Mode", "waiting for start");
+        telemetry.addData("imu calib status", gyro.getCalibrationStatus().toString());
+        telemetry.update();
+
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -129,6 +150,7 @@ public class IterativeOpMode extends OpMode
         // rightPower = -gamepad1.right_stick_y ;
 
 
+        double power = 0.4;
         double x  = gamepad1.left_stick_x;
         double y = -gamepad1.left_stick_y;
         double r = gamepad1.right_stick_x;
@@ -136,7 +158,7 @@ public class IterativeOpMode extends OpMode
         //beginning of big brain -------------------------------------------------------------------.
 
         //!!!!!!!!!!!!!!!!!!!!!!!!!!REPLACE WITH INFO FROM GYRO SENSOR TO CORRECT OFFSET TO ROBOT ALWAYS GOES IN DIRECTION OF STICK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        double angleFromGyro = 1.0; //in radians?
+        double angleFromGyro = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//1.0; also probably wrong one but just change the angle order
         double desiredAngle = (x < 0)? Math.atan(y / x) + Math.PI : Math.atan(y / x);
         double correctedAngle = desiredAngle - angleFromGyro;
 
@@ -167,6 +189,8 @@ public class IterativeOpMode extends OpMode
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("Motors", "x (%.2f), y (%.2f)", x, y);
+        telemetry.addData("GyroAngle", "(%.2f) degrees", angleFromGyro);
+        telemetry.update();
     }
 
     /*
