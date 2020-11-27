@@ -61,12 +61,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 public class TeleOpDriving extends OpMode
 {
     // Declare OpMode members.
-    private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor leftFrontDrive = null;
-    private DcMotor rightFrontDrive = null;
-    private DcMotor leftRearDrive = null;
-    private DcMotor rightRearDrive = null;
-    private BNO055IMU gyro = null;
+    public ElapsedTime runtime = new ElapsedTime();
+    public DcMotor leftFrontDrive = null;
+    public DcMotor rightFrontDrive = null;
+    public DcMotor leftRearDrive = null;
+    public DcMotor rightRearDrive = null;
+    public BNO055IMU gyro = null;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -89,10 +89,13 @@ public class TeleOpDriving extends OpMode
 */
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        /*leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         leftRearDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightRearDrive.setDirection(DcMotor.Direction.REVERSE);
+
+*/
+
 
         telemetry.addData("Mode", "calibrating...");
         telemetry.update();
@@ -104,7 +107,7 @@ public class TeleOpDriving extends OpMode
         //}
 
         telemetry.addData("Mode", "waiting for start");
-        telemetry.addData("imu calib status", gyro.getCalibrationStatus().toString());
+        //telemetry.addData("imu calib status", gyro.getCalibrationStatus().toString());
         telemetry.update();
 
 
@@ -158,9 +161,10 @@ public class TeleOpDriving extends OpMode
         //beginning of big brain -------------------------------------------------------------------.
 
         //!!!!!!!!!!!!!!!!!!!!!!!!!!REPLACE WITH INFO FROM GYRO SENSOR TO CORRECT OFFSET TO ROBOT ALWAYS GOES IN DIRECTION OF STICK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        double angleFromGyro = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//1.0; also probably wrong one but just change the angle order
+        double angleFromGyro = 0;//gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//1.0; also probably wrong one but just change the angle order
         double desiredAngle = (x < 0)? Math.atan(y / x) + Math.PI : Math.atan(y / x);
         double correctedAngle = desiredAngle - angleFromGyro;
+
 
         //correct x
         x = Math.sin(correctedAngle);

@@ -115,14 +115,14 @@ public class HardwareBruinBot
 //        colorSensor = hwMap.get(ColorSensor.class, "colorSensor");
 
         // REV IMU Setup
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        /*BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.mode                = BNO055IMU.SensorMode.IMU;
         parameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
         parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
         parameters.loggingEnabled      = false;
         gyro = hwMap.get(BNO055IMU.class, "gyro");
         gyro.initialize(parameters);
-
+*/
         //Initialize I2C Sensors
 //        colorSensor = hwMap.get(ColorSensor.class, "colorSensor");
 //        rangeSensor = hwMap.get(ModernRoboticsI2cRangeSensor.class, "rangeSensor");
@@ -146,7 +146,7 @@ public class HardwareBruinBot
 
         // Set drive motors to run without encoders.
         // May want to use RUN_USING_ENCODERS if encoders are installed.
-        leftFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         leftRearDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightRearDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
