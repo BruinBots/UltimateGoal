@@ -45,12 +45,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 //skystone hardwaremap
 
 //the place where all the variables are defined
-public class HardwareBruinBot
-{
+public class HardwareBruinBot {
     /* Public OpMode members. */
-    public DcMotor leftFrontDrive   = null;
+    public DcMotor leftFrontDrive = null;
     public DcMotor leftRearDrive = null;
-    public DcMotor rightFrontDrive  = null;
+    public DcMotor rightFrontDrive = null;
     public DcMotor rightRearDrive = null;
 //    public DcMotor armExtendMotor = null;
 //    public DcMotor armLiftMotor = null;
@@ -77,11 +76,11 @@ public class HardwareBruinBot
 //    public static final double ARM_EXT_SERVO   =  0.5 ; //this must be changed later
 
     /* local OpMode members. */
-    HardwareMap hwMap           = null;
-    private ElapsedTime period  = new ElapsedTime();
+    HardwareMap hwMap = null;
+    private ElapsedTime period = new ElapsedTime();
 
     /* Constructor */
-    public HardwareBruinBot(){
+    public HardwareBruinBot() {
     }
 
     /* Initialize standard Hardware interfaces */
@@ -147,9 +146,9 @@ public class HardwareBruinBot
         // Set drive motors to run without encoders.
         // May want to use RUN_USING_ENCODERS if encoders are installed.
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        leftRearDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightRearDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftRearDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightRearDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // make lifting motor brake when not in use
 //        armLiftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

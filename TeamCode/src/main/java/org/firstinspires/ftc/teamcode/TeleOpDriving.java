@@ -87,6 +87,12 @@ public class TeleOpDriving extends OpMode
         leftRearDrive = robot.get(DcMotor.class, "left_rear_drive");
         rightRearDrive = robot.get(DcMotor.class, "right_rear_drive");
 */
+
+        leftFrontDrive = robot.leftFrontDrive;
+        rightFrontDrive = robot.rightFrontDrive;
+        leftRearDrive = robot.leftRearDrive;
+        rightRearDrive = robot.rightRearDrive;
+
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
         /*leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
@@ -153,47 +159,70 @@ public class TeleOpDriving extends OpMode
         // rightPower = -gamepad1.right_stick_y ;
 
 
-        double power = 0.4;
+        double power = 0.1;
         double x  = gamepad1.left_stick_x;
         double y = -gamepad1.left_stick_y;
         double r = gamepad1.right_stick_x;
 
+/*
         //beginning of big brain -------------------------------------------------------------------.
 
         //!!!!!!!!!!!!!!!!!!!!!!!!!!REPLACE WITH INFO FROM GYRO SENSOR TO CORRECT OFFSET TO ROBOT ALWAYS GOES IN DIRECTION OF STICK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         double angleFromGyro = 0;//gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//1.0; also probably wrong one but just change the angle order
         double desiredAngle = (x < 0)? Math.atan(y / x) + Math.PI : Math.atan(y / x);
+        if (desiredAngle < 0)
+            desiredAngle += 2 * Math.PI;
         double correctedAngle = desiredAngle - angleFromGyro;
 
 
-        //correct x
-        x = Math.sin(correctedAngle);
         //correct y
-        y = Math.cos(correctedAngle);
+        double newY = Math.sin(correctedAngle);
+        //correct x
+        double newX = Math.cos(correctedAngle);
 
         //back to smooth brain ---------------------------------------------------------------------
 
-        double drive = 1 - y;
-        double strafe = x;
-        double rotate = r;
 
 
-        leftFrontPower = Range.clip(drive + strafe + rotate, -1.0, 1.0);
-        rightFrontPower = Range.clip(drive - strafe + rotate, -1.0, 1.0);
-        leftRearPower = Range.clip(drive - strafe - rotate, -1.0, 1.0);
-        rightRearPower = Range.clip(drive + strafe - rotate, -1.0, 1.0);
+        /*double drive = newY;
+        double strafe = newX;
+        double rotate = r;*/
 
+        double ro = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y);
+        double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
+        double rightX = gamepad1.right_stick_x;
+        double v1 = ro * Math.cos(robotAngle) + rightX;
+        double v2 = ro * Math.sin(robotAngle) - rightX;
+        double v3 = ro * Math.sin(robotAngle) + rightX;
+        double v4 = ro * Math.cos(robotAngle) - rightX;
 
+        leftFrontPower = v1;//Range.clip(drive + strafe + rotate, -1.0, 1.0);
+        rightFrontPower = v2;//Range.clip(drive - strafe + rotate, -1.0, 1.0);
+        leftRearPower = v3;//.clip(drive - strafe - rotate, -1.0, 1.0);
+        rightRearPower = v4;//Range.clip(drive + strafe - rotate, -1.0, 1.0);
+/*
+        double max = Math.max(Math.max(leftFrontPower, rightFrontPower), Math.max(leftRearPower, rightRearPower));
+        leftFrontPower /= max;
+        rightFrontPower /= max;
+        leftRearPower /= max;
+        rightRearPower /= max;
+*/
         // Send calculated power to wheels
-        leftFrontDrive.setPower(leftFrontPower);
-        rightFrontDrive.setPower(rightFrontPower);
-        leftRearDrive.setPower(leftRearPower);
-        rightRearDrive.setPower(rightRearPower);
+        //leftFrontDrive.setPower(leftFrontPower * power);
+        //rightFrontDrive.setPower(rightFrontPower * power);
+        //leftRearDrive.setPower(leftRearPower * power);
+        //rightRearDrive.setPower(rightRearPower * power);
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("Motors", "x (%.2f), y (%.2f)", x, y);
-        telemetry.addData("GyroAngle", "(%.2f) degrees", angleFromGyro);
+        //telemetry.addData("GyroAngle", "(%.2f) degrees", angleFromGyro);
+        telemetry.addData("Angle", "(%.2f)", robotAngle);
+        telemetry.addData("controllerX", "(%.2f)", x);
+        telemetry.addData("controllerY", "(%.2f)", y);
+        telemetry.addData("leftFront", "(%.2f)", leftFrontPower);
+        telemetry.addData("rightFront", "(%.2f)", rightFrontPower);
+        telemetry.addData("leftRear", "(%.2f)", leftRearPower);
+        telemetry.addData("rightRear", "(%.2f)", rightRearPower);
         telemetry.update();
     }
 
