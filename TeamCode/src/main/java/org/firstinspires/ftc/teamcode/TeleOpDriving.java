@@ -147,23 +147,12 @@ public class TeleOpDriving extends OpMode
         double leftRearPower;
         double rightRearPower;
 
-        // Choose to drive using either Tank Mode, or POV Mode
-        // Comment out the method that's not used.  The default below is POV.
-
-        // POV Mode uses left stick to go forward, and right stick to turn.
-        // - This uses basic math to combine motions and is easier to drive straight.
-
-        // Tank Mode uses one stick to control each wheel.
-        // - This requires no math, but it is hard to drive forward slowly and keep straight.
-        // leftPower  = -gamepad1.left_stick_y ;
-        // rightPower = -gamepad1.right_stick_y ;
-
-
-        double power = 0.1;
+        double power = 0.3;
         double x  = gamepad1.left_stick_x;
         double y = -gamepad1.left_stick_y;
         double r = gamepad1.right_stick_x;
 
+        double[] wheelSpeeds = moveBot(x, r, y, power);
 /*
         //beginning of big brain -------------------------------------------------------------------.
 
@@ -188,41 +177,52 @@ public class TeleOpDriving extends OpMode
         double strafe = newX;
         double rotate = r;*/
 
+        /*
+
         double ro = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y);
         double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
         double rightX = gamepad1.right_stick_x;
-        double v1 = ro * Math.cos(robotAngle) + rightX;
-        double v2 = ro * Math.sin(robotAngle) - rightX;
-        double v3 = ro * Math.sin(robotAngle) + rightX;
-        double v4 = ro * Math.cos(robotAngle) - rightX;
+        double v1 = -gamepad1.left_stick_y + gamepad1.left_stick_x;//ro * Math.cos(robotAngle) + rightX;
+        double v2 = -gamepad1.left_stick_y - gamepad1.left_stick_x;//ro * Math.sin(robotAngle) - rightX;
+        double v3 = -gamepad1.left_stick_y - gamepad1.left_stick_x;//ro * Math.sin(robotAngle) + rightX;
+        double v4 = -gamepad1.left_stick_y + gamepad1.left_stick_x;//ro * Math.cos(robotAngle) - rightX;
 
         leftFrontPower = v1;//Range.clip(drive + strafe + rotate, -1.0, 1.0);
-        rightFrontPower = v2;//Range.clip(drive - strafe + rotate, -1.0, 1.0);
-        leftRearPower = v3;//.clip(drive - strafe - rotate, -1.0, 1.0);
+        leftRearPower = v2;//Range.clip(drive - strafe + rotate, -1.0, 1.0);
+        rightFrontPower = v3;//.clip(drive - strafe - rotate, -1.0, 1.0);
         rightRearPower = v4;//Range.clip(drive + strafe - rotate, -1.0, 1.0);
+*/
+
 /*
+
+
         double max = Math.max(Math.max(leftFrontPower, rightFrontPower), Math.max(leftRearPower, rightRearPower));
         leftFrontPower /= max;
         rightFrontPower /= max;
         leftRearPower /= max;
         rightRearPower /= max;
 */
+        leftFrontPower = wheelSpeeds[0];
+        rightFrontPower = wheelSpeeds[1];
+        leftRearPower = wheelSpeeds[2];
+        rightRearPower = wheelSpeeds[3];
+
         // Send calculated power to wheels
-        //leftFrontDrive.setPower(leftFrontPower * power);
-        //rightFrontDrive.setPower(rightFrontPower * power);
-        //leftRearDrive.setPower(leftRearPower * power);
-        //rightRearDrive.setPower(rightRearPower * power);
+        leftFrontDrive.setPower(leftFrontPower);
+        rightFrontDrive.setPower(rightFrontPower);
+        leftRearDrive.setPower(leftRearPower);
+        rightRearDrive.setPower(rightRearPower);
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         //telemetry.addData("GyroAngle", "(%.2f) degrees", angleFromGyro);
-        telemetry.addData("Angle", "(%.2f)", robotAngle);
-        telemetry.addData("controllerX", "(%.2f)", x);
-        telemetry.addData("controllerY", "(%.2f)", y);
+        //telemetry.addData("Angle", "(%.2f)", robotAngle);
+        telemetry.addData("controllerX", "(%.2f)", gamepad1.left_stick_x);
+        telemetry.addData("controllerY", "(%.2f)", -gamepad1.left_stick_y);
         telemetry.addData("leftFront", "(%.2f)", leftFrontPower);
         telemetry.addData("rightFront", "(%.2f)", rightFrontPower);
-        telemetry.addData("leftRear", "(%.2f)", leftRearPower);
-        telemetry.addData("rightRear", "(%.2f)", rightRearPower);
+        telemetry.addData("leftRear", "(%.2f)", rightRearPower);
+        telemetry.addData("rightRear", "(%.2f)", leftRearPower);
         telemetry.update();
     }
 
@@ -235,6 +235,41 @@ public class TeleOpDriving extends OpMode
         rightFrontDrive.setPower(0.0);
         leftRearDrive.setPower(0.0);
         rightRearDrive.setPower(0.0);
+    }
+
+    public double[] moveBot(double drive, double rotate, double strafe, double scaleFactor)
+    {
+        // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
+//        robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        // How to normalize...Version 3
+        //Put the raw wheel speeds into an array
+        double wheelSpeeds[] = new double[4];
+        wheelSpeeds[0] = drive + strafe - rotate;
+        wheelSpeeds[1] = drive - strafe - rotate;
+        wheelSpeeds[2] = drive - strafe + rotate;
+        wheelSpeeds[3] = drive + strafe + rotate;
+        // Find the magnitude of the first element in the array
+        double maxMagnitude = Math.abs(wheelSpeeds[0]);
+        // If any of the other wheel speeds are bigger, save that value in maxMagnitude
+        for (int i = 1; i < wheelSpeeds.length; i++)
+        {
+            double magnitude = Math.abs(wheelSpeeds[i]);
+            if (magnitude > maxMagnitude)
+            {
+                maxMagnitude = magnitude;
+            }
+        }
+        // Normalize all of the magnitudes to below 1
+        if (maxMagnitude > 1.0)
+        {
+            for (int i = 0; i < wheelSpeeds.length; i++)
+            {
+                wheelSpeeds[i] /= maxMagnitude;
+            }
+        }
+        // Send the normalized values to the wheels, further scaled by the user
+    return wheelSpeeds;
     }
 
 }
