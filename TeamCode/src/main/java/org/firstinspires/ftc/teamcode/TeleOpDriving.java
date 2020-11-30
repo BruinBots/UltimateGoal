@@ -245,10 +245,10 @@ public class TeleOpDriving extends OpMode
         // How to normalize...Version 3
         //Put the raw wheel speeds into an array
         double wheelSpeeds[] = new double[4];
-        wheelSpeeds[0] = drive + strafe - rotate;
-        wheelSpeeds[1] = drive - strafe - rotate;
-        wheelSpeeds[2] = drive - strafe + rotate;
-        wheelSpeeds[3] = drive + strafe + rotate;
+        wheelSpeeds[0] = strafe + drive - rotate;
+        wheelSpeeds[1] = strafe - drive - rotate;
+        wheelSpeeds[2] = strafe - drive + rotate;
+        wheelSpeeds[3] = strafe + drive + rotate;
         // Find the magnitude of the first element in the array
         double maxMagnitude = Math.abs(wheelSpeeds[0]);
         // If any of the other wheel speeds are bigger, save that value in maxMagnitude
