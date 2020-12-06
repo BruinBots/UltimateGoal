@@ -152,6 +152,12 @@ public class TeleOpDriving extends OpMode
         double y = -gamepad1.left_stick_y;
         double r = gamepad1.right_stick_x;
 
+        double gyroAngle = gyro.getAngularOrientation().firstAngle;
+        double correctedAngle = Math.atan2(y, x) - gyroAngle;
+        double originalMagnitude = Math.hypot(y, x);
+        double correctedX = Math.cos(correctedAngle) * originalMagnitude;
+        double correctedY = Math.sin(correctedAngle) * originalMagnitude;
+
         double[] wheelSpeeds = moveBot(x, r, y, power);
 /*
         //beginning of big brain -------------------------------------------------------------------.
