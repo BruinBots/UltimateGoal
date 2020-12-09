@@ -63,7 +63,7 @@ public class HardwareBruinBot {
 //    public DigitalChannel frontTouchSensor;
 //    public DigitalChannel backTouchSensor;
 
-    public BNO055IMU gyro;
+    public BNO055IMU imu = null;
 
 //    public ModernRoboticsI2cRangeSensor rangeSensor;
 //    public ColorSensor colorSensor;
@@ -114,14 +114,14 @@ public class HardwareBruinBot {
 //        colorSensor = hwMap.get(ColorSensor.class, "colorSensor");
 
         // REV IMU Setup
-        /*BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.mode                = BNO055IMU.SensorMode.IMU;
         parameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
         parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
         parameters.loggingEnabled      = false;
-        gyro = hwMap.get(BNO055IMU.class, "gyro");
-        gyro.initialize(parameters);
-*/
+        imu = hwMap.get(BNO055IMU.class, "imu");
+        imu.initialize(parameters);
+
         //Initialize I2C Sensors
 //        colorSensor = hwMap.get(ColorSensor.class, "colorSensor");
 //        rangeSensor = hwMap.get(ModernRoboticsI2cRangeSensor.class, "rangeSensor");

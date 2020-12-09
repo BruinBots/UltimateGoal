@@ -66,7 +66,7 @@ public class TeleOpDriving extends OpMode
     public DcMotor rightFrontDrive = null;
     public DcMotor leftRearDrive = null;
     public DcMotor rightRearDrive = null;
-    public BNO055IMU gyro = null;
+    public BNO055IMU imu = null;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -92,6 +92,8 @@ public class TeleOpDriving extends OpMode
         rightFrontDrive = robot.rightFrontDrive;
         leftRearDrive = robot.leftRearDrive;
         rightRearDrive = robot.rightRearDrive;
+
+        imu = robot.imu;
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
@@ -152,14 +154,17 @@ public class TeleOpDriving extends OpMode
         double y = -gamepad1.left_stick_y;
         double r = gamepad1.right_stick_x;
 
-        double gyroAngle = gyro.getAngularOrientation().firstAngle;
+        double gyroAngle = -1 * imu.getAngularOrientation().firstAngle;
         double correctedAngle = Math.atan2(y, x) - gyroAngle;
         double originalMagnitude = Math.hypot(y, x);
         double correctedX = Math.cos(correctedAngle) * originalMagnitude;
         double correctedY = Math.sin(correctedAngle) * originalMagnitude;
 
-        double[] wheelSpeeds = moveBot(x, r, y, power);
-/*
+        //double[] wheelSpeeds = moveBot(x, r, y, power);
+        double[] wheelSpeeds = moveBot(correctedX, r, correctedY, power);
+
+
+        /*
         //beginning of big brain -------------------------------------------------------------------.
 
         //!!!!!!!!!!!!!!!!!!!!!!!!!!REPLACE WITH INFO FROM GYRO SENSOR TO CORRECT OFFSET TO ROBOT ALWAYS GOES IN DIRECTION OF STICK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -221,7 +226,7 @@ public class TeleOpDriving extends OpMode
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        //telemetry.addData("GyroAngle", "(%.2f) degrees", angleFromGyro);
+        telemetry.addData("GyroAngle", "(%.2f) degrees", gyroAngle);
         //telemetry.addData("Angle", "(%.2f)", robotAngle);
         telemetry.addData("controllerX", "(%.2f)", gamepad1.left_stick_x);
         telemetry.addData("controllerY", "(%.2f)", -gamepad1.left_stick_y);
