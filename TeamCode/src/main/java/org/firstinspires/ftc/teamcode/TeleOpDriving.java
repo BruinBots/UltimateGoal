@@ -68,6 +68,10 @@ public class TeleOpDriving extends OpMode
     public DcMotor rightRearDrive = null;
     public BNO055IMU imu = null;
 
+    //variable to maintain a heading
+    public double desiredHeading = 0;
+    public double deadband = 0.05; //about 3 degrees
+
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -82,11 +86,6 @@ public class TeleOpDriving extends OpMode
         HardwareBruinBot robot = new HardwareBruinBot();
 
         robot.init(hardwareMap);
-        /*leftFrontDrive  = robot.get(DcMotor.class, "left_front_drive");
-        rightFrontDrive = robot.get(DcMotor.class, "right_front_drive");
-        leftRearDrive = robot.get(DcMotor.class, "left_rear_drive");
-        rightRearDrive = robot.get(DcMotor.class, "right_rear_drive");
-*/
 
         leftFrontDrive = robot.leftFrontDrive;
         rightFrontDrive = robot.rightFrontDrive;
@@ -95,28 +94,12 @@ public class TeleOpDriving extends OpMode
 
         imu = robot.imu;
 
-        // Most robots need the motor on one side to be reversed to drive forward
-        // Reverse the motor that runs backwards when connected directly to the battery
-        /*leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftRearDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightRearDrive.setDirection(DcMotor.Direction.REVERSE);
-
-*/
-
-
-        telemetry.addData("Mode", "calibrating...");
-        telemetry.update();
 
         // make sure the imu gyro is calibrated before continuing.  <--- I don't think this is necessary because of iterative op mode. so just dont press play for 25 ms
         //while (!gyro.isGyroCalibrated())
         //{
             
         //}
-
-        telemetry.addData("Mode", "waiting for start");
-        //telemetry.addData("imu calib status", gyro.getCalibrationStatus().toString());
-        telemetry.update();
 
 
         // Tell the driver that initialization is complete.
@@ -160,59 +143,9 @@ public class TeleOpDriving extends OpMode
         double correctedX = Math.cos(correctedAngle) * originalMagnitude;
         double correctedY = Math.sin(correctedAngle) * originalMagnitude;
 
-        //double[] wheelSpeeds = moveBot(x, r, y, power);
-        double[] wheelSpeeds = moveBot(correctedX, r, correctedY, power);
+        //double[] wheelSpeeds = moveBot(x, r, y, power); //to control from a robot perspective
+        double[] wheelSpeeds = moveBot(correctedX, r, correctedY, power); //to control from a field perspective
 
-
-        /*
-        //beginning of big brain -------------------------------------------------------------------.
-
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!REPLACE WITH INFO FROM GYRO SENSOR TO CORRECT OFFSET TO ROBOT ALWAYS GOES IN DIRECTION OF STICK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        double angleFromGyro = 0;//gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;//1.0; also probably wrong one but just change the angle order
-        double desiredAngle = (x < 0)? Math.atan(y / x) + Math.PI : Math.atan(y / x);
-        if (desiredAngle < 0)
-            desiredAngle += 2 * Math.PI;
-        double correctedAngle = desiredAngle - angleFromGyro;
-
-
-        //correct y
-        double newY = Math.sin(correctedAngle);
-        //correct x
-        double newX = Math.cos(correctedAngle);
-
-        //back to smooth brain ---------------------------------------------------------------------
-
-
-
-        /*double drive = newY;
-        double strafe = newX;
-        double rotate = r;*/
-
-        /*
-
-        double ro = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y);
-        double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
-        double rightX = gamepad1.right_stick_x;
-        double v1 = -gamepad1.left_stick_y + gamepad1.left_stick_x;//ro * Math.cos(robotAngle) + rightX;
-        double v2 = -gamepad1.left_stick_y - gamepad1.left_stick_x;//ro * Math.sin(robotAngle) - rightX;
-        double v3 = -gamepad1.left_stick_y - gamepad1.left_stick_x;//ro * Math.sin(robotAngle) + rightX;
-        double v4 = -gamepad1.left_stick_y + gamepad1.left_stick_x;//ro * Math.cos(robotAngle) - rightX;
-
-        leftFrontPower = v1;//Range.clip(drive + strafe + rotate, -1.0, 1.0);
-        leftRearPower = v2;//Range.clip(drive - strafe + rotate, -1.0, 1.0);
-        rightFrontPower = v3;//.clip(drive - strafe - rotate, -1.0, 1.0);
-        rightRearPower = v4;//Range.clip(drive + strafe - rotate, -1.0, 1.0);
-*/
-
-/*
-
-
-        double max = Math.max(Math.max(leftFrontPower, rightFrontPower), Math.max(leftRearPower, rightRearPower));
-        leftFrontPower /= max;
-        rightFrontPower /= max;
-        leftRearPower /= max;
-        rightRearPower /= max;
-*/
         leftFrontPower = wheelSpeeds[0];
         rightFrontPower = wheelSpeeds[1];
         leftRearPower = wheelSpeeds[2];
