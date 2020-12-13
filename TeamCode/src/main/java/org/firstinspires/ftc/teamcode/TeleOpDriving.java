@@ -125,18 +125,18 @@ public class TeleOpDriving extends OpMode
         double leftRearPower;
         double rightRearPower;
 
-        double power = 0.3;
+        double power = 0.20;
         double x  = gamepad1.left_stick_x;
         double y = -gamepad1.left_stick_y;
         double r = gamepad1.right_stick_x;
         double desiredAngle = Math.atan2(y, x);
-        double gyroAngle = -1 * imu.getAngularOrientation().firstAngle;
-
+        double gyroAngle = imu.getAngularOrientation().firstAngle;
+/*
         if (r != 0)
             previousHeading = gyroAngle;
         else if (Math.abs(previousHeading - gyroAngle) > deadband && r == 0)
-            r += (gyroAngle - previousHeading > 0) ? 0.1 : -0.1;
-
+            r += (previousHeading - gyroAngle > 0) ? 0.1 : -0.1;
+*/
         double correctedAngle = desiredAngle - gyroAngle;
         double originalMagnitude = Math.hypot(y, x); //how far the joystick is being pressed
         double correctedX = Math.cos(correctedAngle) * originalMagnitude;
@@ -151,17 +151,22 @@ public class TeleOpDriving extends OpMode
         rightRearPower = wheelSpeeds[3];
 
         // Send calculated power to wheels
-        leftFrontDrive.setPower(leftFrontPower);
-        rightFrontDrive.setPower(rightFrontPower);
-        leftRearDrive.setPower(leftRearPower);
-        rightRearDrive.setPower(rightRearPower);
+        leftFrontDrive.setPower(leftFrontPower * power);
+        rightFrontDrive.setPower(rightFrontPower * power);
+        leftRearDrive.setPower(leftRearPower * power);
+        rightRearDrive.setPower(rightRearPower * power);
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("GyroAngle", "(%.2f) radians", gyroAngle);
-        //telemetry.addData("Angle", "(%.2f)", robotAngle);
         telemetry.addData("controllerX", "(%.2f)", gamepad1.left_stick_x);
         telemetry.addData("controllerY", "(%.2f)", -gamepad1.left_stick_y);
+
+        telemetry.addData("desiredAngle", "(%.2f)", desiredAngle);
+        telemetry.addData("gyroAngle", "(%.2f) radians", gyroAngle);
+        telemetry.addData("correctedAngled", "(%.2f) radians", correctedAngle);
+        telemetry.addData("originalMagnitude", "(%.2f) radians", originalMagnitude);
+
+
         telemetry.addData("leftFront", "(%.2f)", leftFrontPower);
         telemetry.addData("rightFront", "(%.2f)", rightFrontPower);
         telemetry.addData("leftRear", "(%.2f)", rightRearPower);
