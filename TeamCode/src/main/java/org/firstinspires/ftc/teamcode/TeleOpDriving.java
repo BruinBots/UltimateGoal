@@ -30,17 +30,10 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 /**
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -68,8 +61,8 @@ public class TeleOpDriving extends OpMode
     public DcMotor rightRearDrive = null;
     public BNO055IMU imu = null;
 
-    //variable to maintain a heading
-    public double desiredHeading = 0;
+    //variables to maintain a heading
+    public double previousHeading = 0;
     public double deadband = 0.05; //about 3 degrees
 
     /*
@@ -136,10 +129,16 @@ public class TeleOpDriving extends OpMode
         double x  = gamepad1.left_stick_x;
         double y = -gamepad1.left_stick_y;
         double r = gamepad1.right_stick_x;
-
+        double desiredAngle = Math.atan2(y, x);
         double gyroAngle = -1 * imu.getAngularOrientation().firstAngle;
-        double correctedAngle = Math.atan2(y, x) - gyroAngle;
-        double originalMagnitude = Math.hypot(y, x);
+
+        if (r != 0)
+            previousHeading = gyroAngle;
+        else if (Math.abs(previousHeading - gyroAngle) > deadband && r == 0)
+            r += (gyroAngle - previousHeading > 0) ? 0.1 : -0.1;
+
+        double correctedAngle = desiredAngle - gyroAngle;
+        double originalMagnitude = Math.hypot(y, x); //how far the joystick is being pressed
         double correctedX = Math.cos(correctedAngle) * originalMagnitude;
         double correctedY = Math.sin(correctedAngle) * originalMagnitude;
 
@@ -159,7 +158,7 @@ public class TeleOpDriving extends OpMode
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("GyroAngle", "(%.2f) degrees", gyroAngle);
+        telemetry.addData("GyroAngle", "(%.2f) radians", gyroAngle);
         //telemetry.addData("Angle", "(%.2f)", robotAngle);
         telemetry.addData("controllerX", "(%.2f)", gamepad1.left_stick_x);
         telemetry.addData("controllerY", "(%.2f)", -gamepad1.left_stick_y);
