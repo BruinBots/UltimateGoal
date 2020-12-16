@@ -61,6 +61,9 @@ public class TeleOpDriving extends OpMode
     public DcMotor rightRearDrive = null;
     public BNO055IMU imu = null;
 
+    double power = 0.20; //used to control max drive power
+
+
     //variables to maintain a heading
     public double previousHeading = 0;
     public double deadband = 0.05; //about 3 degrees
@@ -80,20 +83,14 @@ public class TeleOpDriving extends OpMode
 
         robot.init(hardwareMap);
 
+        //init all drive wheels
         leftFrontDrive = robot.leftFrontDrive;
         rightFrontDrive = robot.rightFrontDrive;
         leftRearDrive = robot.leftRearDrive;
         rightRearDrive = robot.rightRearDrive;
 
+        //init imu
         imu = robot.imu;
-
-
-        // make sure the imu gyro is calibrated before continuing.  <--- I don't think this is necessary because of iterative op mode. so just dont press play for 25 ms
-        //while (!gyro.isGyroCalibrated())
-        //{
-            
-        //}
-
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -120,57 +117,44 @@ public class TeleOpDriving extends OpMode
     @Override
     public void loop() {
         // Setup a variable for each drive wheel to save power level for telemetry
-        double leftFrontPower;
-        double rightFrontPower;
-        double leftRearPower;
-        double rightRearPower;
+        double leftFrontPower, rightFrontPower, leftRearPower, rightRearPower;
 
-        double power = 0.20;
         double x  = gamepad1.left_stick_x;
         double y = -gamepad1.left_stick_y;
         double r = gamepad1.right_stick_x;
-        double desiredAngle = Math.atan2(y, x);
-        double gyroAngle = imu.getAngularOrientation().firstAngle;
-/*
+
+        double correctedAngle = getError(Math.atan2(y, x));
+
+        //adjust rotation parameter to spin opposite to rotation drift
+
         if (r != 0)
-            previousHeading = gyroAngle;
-        else if (Math.abs(previousHeading - gyroAngle) > deadband && r == 0)
-            r += (previousHeading - gyroAngle > 0) ? 0.1 : -0.1;
-*/
-        double correctedAngle = desiredAngle - gyroAngle;
+            previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
+        else
+            r += counterspin();
+
         double originalMagnitude = Math.hypot(y, x); //how far the joystick is being pressed
         double correctedX = Math.cos(correctedAngle) * originalMagnitude;
         double correctedY = Math.sin(correctedAngle) * originalMagnitude;
 
         //double[] wheelSpeeds = moveBot(x, r, y, power); //to control from a robot perspective
-        double[] wheelSpeeds = moveBot(correctedX, r, correctedY, power); //to control from a field perspective
+        moveBot(correctedX, r, correctedY, power); //to control from a field perspective
 
-        leftFrontPower = wheelSpeeds[0];
-        rightFrontPower = wheelSpeeds[1];
-        leftRearPower = wheelSpeeds[2];
-        rightRearPower = wheelSpeeds[3];
-
-        // Send calculated power to wheels
-        leftFrontDrive.setPower(leftFrontPower * power);
-        rightFrontDrive.setPower(rightFrontPower * power);
-        leftRearDrive.setPower(leftRearPower * power);
-        rightRearDrive.setPower(rightRearPower * power);
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("controllerX", "(%.2f)", gamepad1.left_stick_x);
         telemetry.addData("controllerY", "(%.2f)", -gamepad1.left_stick_y);
 
-        telemetry.addData("desiredAngle", "(%.2f)", desiredAngle);
-        telemetry.addData("gyroAngle", "(%.2f) radians", gyroAngle);
+        telemetry.addData("desiredAngle", "(%.2f)", Math.atan2(y, x));
+        telemetry.addData("gyroAngle", "(%.2f) radians", getHeading());
         telemetry.addData("correctedAngled", "(%.2f) radians", correctedAngle);
         telemetry.addData("originalMagnitude", "(%.2f) radians", originalMagnitude);
 
 
-        telemetry.addData("leftFront", "(%.2f)", leftFrontPower);
-        telemetry.addData("rightFront", "(%.2f)", rightFrontPower);
-        telemetry.addData("leftRear", "(%.2f)", rightRearPower);
-        telemetry.addData("rightRear", "(%.2f)", leftRearPower);
+        telemetry.addData("leftFront", "(%.2f)", leftFrontDrive.getPower());
+        telemetry.addData("rightFront", "(%.2f)", rightFrontDrive.getPower());
+        telemetry.addData("leftRear", "(%.2f)", rightRearDrive.getPower());
+        telemetry.addData("rightRear", "(%.2f)", leftRearDrive.getPower());
         telemetry.update();
     }
 
@@ -185,7 +169,21 @@ public class TeleOpDriving extends OpMode
         rightRearDrive.setPower(0.0);
     }
 
-    public double[] moveBot(double drive, double rotate, double strafe, double scaleFactor)
+    public double counterspin() {
+        if (Math.abs(getError(previousHeading)) > deadband)
+            return (getError(previousHeading) > 0) ? 0.1 : -0.1;
+        return 0;
+    }
+
+    public double getHeading() {
+        return imu.getAngularOrientation().firstAngle;
+    }
+
+    public double getError(double desiredHeading) {
+        return desiredHeading - getHeading();
+    }
+
+    public void moveBot(double drive, double rotate, double strafe, double scaleFactor)
     {
         // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
 //        robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -217,7 +215,13 @@ public class TeleOpDriving extends OpMode
             }
         }
         // Send the normalized values to the wheels, further scaled by the user
-    return wheelSpeeds;
+
+        // Send calculated power to wheels
+        leftFrontDrive.setPower(wheelSpeeds[0] * power);
+        rightFrontDrive.setPower(wheelSpeeds[1] * power);
+        leftRearDrive.setPower(wheelSpeeds[2] * power);
+        rightRearDrive.setPower(wheelSpeeds[3] * power);
+    //return wheelSpeeds;
     }
 
 }
