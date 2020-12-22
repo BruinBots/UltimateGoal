@@ -49,7 +49,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Basic: Iterative OpMode", group="Iterative Opmode")
+@TeleOp(name="TeleOp Driving", group="Iterative Opmode")
 //@Disabled
 public class TeleOpDriving extends OpMode
 {
@@ -61,12 +61,12 @@ public class TeleOpDriving extends OpMode
     public DcMotor rightRearDrive = null;
     public BNO055IMU imu = null;
 
-    double power = 0.20; //used to control max drive power
+    double power = 0.3; //used to control max drive power
 
 
     //variables to maintain a heading
     public double previousHeading = 0;
-    public double deadband = 0.05; //about 3 degrees
+    public double deadband = toRadians(3);
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -133,7 +133,7 @@ public class TeleOpDriving extends OpMode
             r += counterspin();
 
         double originalMagnitude = Math.hypot(y, x); //how far the joystick is being pressed
-        double correctedX = Math.cos(correctedAngle) * originalMagnitude;
+        double correctedX = Math.cos(correctedAngle) * originalMagnitude; //break it back up to send to movebot
         double correctedY = Math.sin(correctedAngle) * originalMagnitude;
 
         //double[] wheelSpeeds = moveBot(x, r, y, power); //to control from a robot perspective
@@ -144,11 +144,16 @@ public class TeleOpDriving extends OpMode
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("controllerX", "(%.2f)", gamepad1.left_stick_x);
         telemetry.addData("controllerY", "(%.2f)", -gamepad1.left_stick_y);
+        telemetry.addData("rotation", "(%.2f)", r);
 
-        telemetry.addData("desiredAngle", "(%.2f)", Math.atan2(y, x));
-        telemetry.addData("gyroAngle", "(%.2f) radians", getHeading());
-        telemetry.addData("correctedAngled", "(%.2f) radians", correctedAngle);
-        telemetry.addData("originalMagnitude", "(%.2f) radians", originalMagnitude);
+
+        telemetry.addData("desiredAngle", "(%.2f)", toDegrees(Math.atan2(y, x)));
+        telemetry.addData("gyroAngle", "(%.2f)", toDegrees(getHeading()));
+        telemetry.addData("correctedAngled", "(%.2f)", toDegrees(correctedAngle));
+        telemetry.addData("Trying to correct", "(%.2f)", counterspin());
+        telemetry.addData("Error from last desired", "(%.2f)", toDegrees(getError(previousHeading)));
+
+        //telemetry.addData("originalMagnitude", "(%.2f)", toDegrees(originalMagnitude));
 
 
         telemetry.addData("leftFront", "(%.2f)", leftFrontDrive.getPower());
@@ -169,16 +174,27 @@ public class TeleOpDriving extends OpMode
         rightRearDrive.setPower(0.0);
     }
 
+    // when called figures out if it is out of the deadband and returns a double that is designed to spin the opposite of
     public double counterspin() {
-        if (Math.abs(getError(previousHeading)) > deadband)
-            return (getError(previousHeading) > 0) ? 0.1 : -0.1;
-        return 0;
+        double error = getError(previousHeading); //so we don't have to keep calling this
+        if (Math.abs(error) > 5 * deadband) { //if the error is significantly larger than deadband correct more aggressively
+            return (error > 0) ? -1 : 1;
+        }
+        else if (Math.abs(error) >  2 * deadband) { //if the error is slightly larger than deadband be nice
+            return (error > 0) ? -0.5 : 0.5;
+        }
+        else if (Math.abs(error) >  deadband) { //if the error is slightly larger than deadband be nice
+            return (error > 0) ? -0.3 : 0.3;
+        }
+        return 0; //if within deadband chill
     }
 
+    //returns the current heading of the robot relative to the starting position
     public double getHeading() {
         return imu.getAngularOrientation().firstAngle;
     }
 
+    //find difference between where we want to go and where we are
     public double getError(double desiredHeading) {
         return desiredHeading - getHeading();
     }
@@ -217,11 +233,17 @@ public class TeleOpDriving extends OpMode
         // Send the normalized values to the wheels, further scaled by the user
 
         // Send calculated power to wheels
-        leftFrontDrive.setPower(wheelSpeeds[0] * power);
-        rightFrontDrive.setPower(wheelSpeeds[1] * power);
-        leftRearDrive.setPower(wheelSpeeds[2] * power);
-        rightRearDrive.setPower(wheelSpeeds[3] * power);
+        leftFrontDrive.setPower(wheelSpeeds[0] * scaleFactor);
+        rightFrontDrive.setPower(wheelSpeeds[1] * scaleFactor);
+        leftRearDrive.setPower(wheelSpeeds[2] * scaleFactor);
+        rightRearDrive.setPower(wheelSpeeds[3] * scaleFactor);
     //return wheelSpeeds;
     }
+    public double toDegrees(double radians) { //convert to degrees from radians
+        return radians / Math.PI * 180;
+    }
 
+    public double toRadians(double degrees) {
+        return degrees * Math.PI / 180;
+    }
 }
