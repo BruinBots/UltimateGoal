@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -79,6 +80,8 @@ public class TeleOpDriving extends OpMode
     private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     private VuforiaLocalizer vuforia;
     private TFObjectDetector tfod;
+
+    public static List<Recognition> lastRecognitions = new ArrayList<Recognition>();
 
 
     //variables to maintain a heading
@@ -152,26 +155,29 @@ public class TeleOpDriving extends OpMode
 
         //adjust rotation parameter to spin opposite to rotation drift
 
-        if (r != 0)
+        /*if (r != 0)
             previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
         else
-            r += counterspin();
+            r += counterspin();*/
 
         double originalMagnitude = Math.hypot(y, x); //how far the joystick is being pressed
         double correctedX = Math.cos(correctedAngle) * originalMagnitude; //break it back up to send to movebot
         double correctedY = Math.sin(correctedAngle) * originalMagnitude;
 
         //double[] wheelSpeeds = moveBot(x, r, y, power); //to control from a robot perspective
-        moveBot(correctedX, r, correctedY, power); //to control from a field perspective
+        moveBot(correctedX, r, correctedY, power, true); //to control from a field perspective
 
+        List<Recognition> recognitions = getRecognitions();
+        if (recognitions != null)
+            lastRecognitions = recognitions;
+        telemetry.addData("detectedRecognitions", lastRecognitions);
 
+        /*
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("controllerX", "(%.2f)", gamepad1.left_stick_x);
         telemetry.addData("controllerY", "(%.2f)", -gamepad1.left_stick_y);
         telemetry.addData("rotation", "(%.2f)", r);
-
-
         telemetry.addData("desiredAngle", "(%.2f)", toDegrees(Math.atan2(y, x)));
         telemetry.addData("gyroAngle", "(%.2f)", toDegrees(getHeading()));
         telemetry.addData("correctedAngled", "(%.2f)", toDegrees(correctedAngle));
@@ -185,7 +191,7 @@ public class TeleOpDriving extends OpMode
         telemetry.addData("rightFront", "(%.2f)", rightFrontDrive.getPower());
         telemetry.addData("leftRear", "(%.2f)", rightRearDrive.getPower());
         telemetry.addData("rightRear", "(%.2f)", leftRearDrive.getPower());
-        telemetry.update();
+        telemetry.update();*/
     }
 
     /*
@@ -228,7 +234,7 @@ public class TeleOpDriving extends OpMode
         return desiredHeading - getHeading();
     }
 
-    public void moveBot(double drive, double rotate, double strafe, double scaleFactor)
+    public void moveBot(double drive, double rotate, double strafe, double scaleFactor, boolean maintainHeading)
     {
         // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
 //        robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -236,6 +242,13 @@ public class TeleOpDriving extends OpMode
         // How to normalize...Version 3
         //Put the raw wheel speeds into an array
         double wheelSpeeds[] = new double[4];
+
+        //adjust rotation parameter to spin opposite to rotation drift
+        if (rotate != 0)
+            previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
+        else
+            rotate += counterspin();
+
         wheelSpeeds[0] = strafe + drive - rotate;
         wheelSpeeds[1] = strafe - drive + rotate;
         wheelSpeeds[2] = strafe - drive - rotate;
@@ -329,5 +342,39 @@ public class TeleOpDriving extends OpMode
             }
         }
         return null;
+    }
+
+    private void stupidGetRecognitions() {
+        if (tfod != null) {
+            // getUpdatedRecognitions() will return null if no new information is available since
+            // the last time that call was made.
+            List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+            if (updatedRecognitions != null) {
+                telemetry.addData("# Object Detected", updatedRecognitions.size());
+
+                // step through the list of recognitions and display boundary info.
+                int i = 0;
+                for (Recognition recognition : updatedRecognitions) {
+                    telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                    telemetry.addData(String.format("label (%d)", i), recognition.estimateAngleToObject(AngleUnit.DEGREES));
+                    telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                            recognition.getLeft(), recognition.getTop());
+                    telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                            recognition.getRight(), recognition.getBottom());
+                }
+                telemetry.update();
+            }
+        }
+    }
+
+    private List<Recognition> getSingles() {
+        List<Recognition> singles = new ArrayList();
+        List<Recognition> recognition = getRecognitions();
+        for (int i = 0; i < recognition.size(); i++) {
+            if (recognition.get(i).getLabel().equals("Single"));
+                singles.add(recognition.get(i));
+        }
+
+        return singles;
     }
 }
