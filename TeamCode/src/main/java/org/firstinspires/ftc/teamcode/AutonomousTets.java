@@ -34,7 +34,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.vuforia.Tracker;
 import com.vuforia.Vuforia;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -117,7 +116,7 @@ public class AutonomousTets extends OpMode
     private static final String LABEL_FIRST_ELEMENT = "Quad";
     private static final String LABEL_SECOND_ELEMENT = "Single";
     //private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
-    private ClosableVuforiaLocalizer vuforiaRing;
+    private ClosableVuforiaLocalizer vuforia;
     private TFObjectDetector tfod;
 
     private static List<Recognition> lastRingRecognitions = new ArrayList<Recognition>();
@@ -211,11 +210,6 @@ public class AutonomousTets extends OpMode
 
             if (doOnce) {
                 tfod.shutdown();
-                //Vuforia.deinit();
-                //Vuforia.;
-
-                //vuforiaRing.close();
-
                 doOnce = false;
             } //shut down object detection so vuforia doesn't die
 
@@ -223,6 +217,7 @@ public class AutonomousTets extends OpMode
             //initialize navigation
             if (runtime.time() - start > 5 && doOnce2) {
                 initVuforiaNavigation(); //start initializing vuforia
+                targetsUltimateGoal.activate();
                 doOnce2 = false;
             }
             //targetsUltimateGoal.activate();
@@ -325,11 +320,11 @@ public class AutonomousTets extends OpMode
         parameters.useExtendedTracking = false;
 
         //  Instantiate the Vuforia engine
-        vuforiaRing = new ClosableVuforiaLocalizer(parameters);
+        vuforia = new ClosableVuforiaLocalizer(parameters);
 
         // Load the data sets for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
-        targetsUltimateGoal = this.vuforiaRing.loadTrackablesFromAsset("UltimateGoal");
+        targetsUltimateGoal = this.vuforia.loadTrackablesFromAsset("UltimateGoal");
         VuforiaTrackable blueTowerGoalTarget = targetsUltimateGoal.get(0);
         blueTowerGoalTarget.setName("Blue Tower Goal Target");
         VuforiaTrackable redTowerGoalTarget = targetsUltimateGoal.get(1);
@@ -436,7 +431,7 @@ public class AutonomousTets extends OpMode
 
 
         tfodParameters.minResultConfidence = 0.8f;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforiaRing);
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 
@@ -450,7 +445,7 @@ public class AutonomousTets extends OpMode
         parameters.cameraDirection = CameraDirection.BACK;
 
         //  Instantiate the Vuforia engine
-        vuforiaRing = new ClosableVuforiaLocalizer(parameters);
+        vuforia = new ClosableVuforiaLocalizer(parameters);
 
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
     }
