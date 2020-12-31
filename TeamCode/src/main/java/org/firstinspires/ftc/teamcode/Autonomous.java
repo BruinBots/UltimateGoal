@@ -131,8 +131,6 @@ public class Autonomous extends OpMode
      */
     @Override
     public void init() {
-        telemetry.addData("Status", "Initialized");
-
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
@@ -153,10 +151,10 @@ public class Autonomous extends OpMode
         //initialize navigation
         //initVuforiaNavigation();
 
-
         //initialize vision components
         initVuforiaTfod();
         initTfod();
+
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -183,51 +181,56 @@ public class Autonomous extends OpMode
      * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
      */
 
-    private int box = 1;
+    private int box = 1; //stores the box that the wobblegoal needs to be dropped in
+    private boolean found = false; //allows us to not have to wait the time if there is a detection
+    private boolean doOnce = true;
 
     @Override
     public void loop() {
-        //if (getRuntime() < 2) {
+        if (runtime.time() < 10 && !found) {
             //get all recognitions from object detection code and displays an ArrayList with all recognitions
             List<Recognition> recognitions = getRingRecognitions();
             telemetry.addData("detectedRecognitions", recognitions);
+            telemetry.addData("time", runtime.time());
             int correctBox = findCorrectBox(recognitions);
-            box = (correctBox > 1) ? correctBox : box; //sometimes the detection takes a while and sometimes loses it so this ensures that we save the detection results
-            telemetry.addData("wobbleGoalBox", box);
-        //}
-        // check all the trackable targets to see which one (if any) is visible.
-        /*
-        targetVisible = false;
-        for (VuforiaTrackable trackable : allTrackables) {
-            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
-                telemetry.addData("Visible Target", trackable.getName());
-                targetVisible = true;
-
-                // getUpdatedRobotLocation() will return null if no new information is available since
-                // the last time that call was made, or if the trackable is not currently visible.
-                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
-                if (robotLocationTransform != null) {
-                    lastLocation = robotLocationTransform;
-                }
-                break;
+            //box = (correctBox > 1) ? correctBox : box;
+            if (correctBox > 1) {//sometimes the detection takes a while and sometimes loses it so this ensures that we save the detection results
+                box = correctBox;
+                found = true;
             }
+            telemetry.addData("wobbleGoalBox", box);
         }
 
-        // Provide feedback as to where the robot is located (if we know).
-        if (targetVisible) {
-            // express position (translation) of robot in inches.
-            VectorF translation = lastLocation.getTranslation();
-            telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-                    translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
-
-            // express the rotation of the robot in degrees.
-            Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
-            telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
-        }
         else {
-            telemetry.addData("Visible Target", "none");
+
+            if (doOnce) {
+                tfod.shutdown();
+                doOnce = false;
+            } //shut down object detection so vuforia doesn't die
+
+
+            //initialize navigation
+            initVuforiaNavigation(); //start initializing vuforia
+            targetsUltimateGoal.activate();
+
+            telemetry.addData("NavTarget", findVisibileTarget());
+// Provide feedback as to where the robot is located (if we know).
+            //telemetry.addData("target", findVisibileTarget());
+            /*if (targetVisible) {
+                // express position (translation) of robot in inches.
+                VectorF translation = lastLocation.getTranslation();
+                telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+
+                // express the rotation of the robot in degrees.
+                Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+                telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+            }
+            else {
+                telemetry.addData("Visible Target", "none");
+            }*/
+
         }
-        */
 
 
         telemetry.update();
@@ -254,6 +257,27 @@ public class Autonomous extends OpMode
         }
     }
 
+    private OpenGLMatrix findVisibileTarget() {
+        // check all the trackable targets to see which one (if any) is visible.
+        targetVisible = false;
+        for (VuforiaTrackable trackable : allTrackables) {
+            if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
+                telemetry.addData("Visible Target", trackable.getName());
+                targetVisible = true;
+
+                // getUpdatedRobotLocation() will return null if no new information is available since
+                // the last time that call was made, or if the trackable is not currently visible.
+                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
+                if (robotLocationTransform != null) {
+                    lastLocation = robotLocationTransform;
+                }
+                break;
+            }
+        }
+
+        return lastLocation;
+    }
+
     private int findCorrectBox(List<Recognition> recognitions) {
 
         if (recognitions.size() > 0) {
@@ -274,7 +298,7 @@ public class Autonomous extends OpMode
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
 
-        // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        //VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
         parameters.cameraDirection   = CAMERA_CHOICE;
@@ -390,7 +414,9 @@ public class Autonomous extends OpMode
     private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters();//tfodMonitorViewId); //uncomment to use camera monitor
+
+
         tfodParameters.minResultConfidence = 0.8f;
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforiaRing);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
