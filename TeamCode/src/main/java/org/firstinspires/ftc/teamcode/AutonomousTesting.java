@@ -37,7 +37,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.vuforia.Vuforia;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.matrices.MatrixF;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
@@ -85,7 +84,6 @@ public class AutonomousTesting extends OpMode
 
     double power = 0.3; //used to control max drive power
 
-    private ClosableVuforiaLocalizer vuforia;
     private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
@@ -93,8 +91,9 @@ public class AutonomousTesting extends OpMode
     private static final float mmTargetHeight   = (6) * mmPerInch;
     // the height of the center of the target image above the floor
 
-    VuforiaTrackables targetsUltimateGoal = null;
-    List<VuforiaTrackable> allTrackables = null;
+    private ClosableVuforiaLocalizer vuforiaNav;
+    private VuforiaTrackables targetsUltimateGoal = null;
+    private List<VuforiaTrackable> allTrackables = null;
 
     // Constants for perimeter targets
     private static final float halfField = 72 * mmPerInch;
@@ -111,6 +110,8 @@ public class AutonomousTesting extends OpMode
     private float phoneZRotate    = 0;
 
     //variables for object detection, not navigation
+    private ClosableVuforiaLocalizer vuforiaRing;
+
 
     //variables for object detection
     private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
@@ -190,7 +191,7 @@ public class AutonomousTesting extends OpMode
 
     @Override
     public void loop() {
-        if (runtime.time() < 10 && !found) {
+        if (runtime.time() < 1 && !found) {
             //get all recognitions from object detection code and displays an ArrayList with all recognitions
             List<Recognition> recognitions = getRingRecognitions();
             telemetry.addData("detectedRecognitions", recognitions);
@@ -207,6 +208,7 @@ public class AutonomousTesting extends OpMode
 
         else { //shut down object detection so vuforia doesn't die
             if (ringDetectionNotDeintialized) {
+                //tfod.deactivate();
                 tfod.shutdown();
                 ringDetectionNotDeintialized = false;
             }
@@ -219,8 +221,10 @@ public class AutonomousTesting extends OpMode
                 navNotInitialized = false;
             }
 
-            if (findVisibileTarget() != null)
+            if (targetVisible) {
                 telemetry.addData("lastLocationDisplacement", lastLocation.getTranslation());
+
+            }
 
 
 
@@ -265,9 +269,11 @@ public class AutonomousTesting extends OpMode
 
 
         //closes object detection to save system resources
-        /*if (tfod != null) {
+        if (tfod != null) {
             tfod.shutdown();
-        }*/
+        }
+
+        //------------------------------------------------------------------------ IT DIES HERE
     }
 
     private OpenGLMatrix findVisibileTarget() {
@@ -326,11 +332,11 @@ public class AutonomousTesting extends OpMode
         parameters.useExtendedTracking = false;
 
         //  Instantiate the Vuforia engine
-        vuforia = new ClosableVuforiaLocalizer(parameters);
+        vuforiaNav = new ClosableVuforiaLocalizer(parameters);
 
         // Load the data sets for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
-        targetsUltimateGoal = this.vuforia.loadTrackablesFromAsset("UltimateGoal");
+        targetsUltimateGoal = this.vuforiaNav.loadTrackablesFromAsset("UltimateGoal");
         VuforiaTrackable blueTowerGoalTarget = targetsUltimateGoal.get(0);
         blueTowerGoalTarget.setName("Blue Tower Goal Target");
         VuforiaTrackable redTowerGoalTarget = targetsUltimateGoal.get(1);
@@ -437,7 +443,7 @@ public class AutonomousTesting extends OpMode
 
 
         tfodParameters.minResultConfidence = 0.8f;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforiaRing);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 
@@ -453,7 +459,7 @@ public class AutonomousTesting extends OpMode
         parameters.cameraDirection = CameraDirection.BACK;
 
         //  Instantiate the Vuforia engine
-        vuforia = new ClosableVuforiaLocalizer(parameters);
+        vuforiaRing = new ClosableVuforiaLocalizer(parameters);
 
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
     }
