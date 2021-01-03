@@ -157,7 +157,6 @@ public class AutonomousTesting extends OpMode
         initTfod();
 
 
-
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
     }
@@ -273,7 +272,13 @@ public class AutonomousTesting extends OpMode
             tfod.shutdown();
         }
 
-        //------------------------------------------------------------------------ IT DIES HERE
+        //<------------------------------------------------------------------------ IT DIES HERE AS IT HAPPENS WHEN THE OPMODE IS DOING CLEANUP
+        /*@Override public void onOpModePostStop(OpMode opMode)
+        {
+            /* We automatically shut down after the opmode (in which we are started) stops.  /
+            close();
+        }
+    }*/
     }
 
     private OpenGLMatrix findVisibileTarget() {
