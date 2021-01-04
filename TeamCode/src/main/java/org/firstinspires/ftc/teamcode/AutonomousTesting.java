@@ -610,7 +610,7 @@ public class AutonomousTesting extends OpMode
         leftRearDrive.setPower(wheelSpeeds[2] * scaleFactor);
         rightRearDrive.setPower(wheelSpeeds[3] * scaleFactor);
 
-        telemetry.addData("Direction of Movement", toDegrees(Math.atan2(drive, strafe)));
+        telemetry.addData("Direction of Movement", (360 + toDegrees(Math.atan2(drive, strafe))) % 360);
         //return wheelSpeeds;
     }
 
