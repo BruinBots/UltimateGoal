@@ -34,10 +34,10 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.vuforia.Vuforia;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
-import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection;
@@ -70,7 +70,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Autonomous", group="Iterative Opmode")
+@TeleOp(name="pls work :(", group="Iterative Opmode")
 //@Disabled
 public class Autonomous extends OpMode
 {
@@ -84,47 +84,49 @@ public class Autonomous extends OpMode
 
     double power = 0.3; //used to control max drive power
 
-    private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
+    public ClosableVuforiaLocalizer vuforia;
+
+    public static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
-    private static final float mmPerInch        = 25.4f;
-    private static final float mmTargetHeight   = (6) * mmPerInch;
+    public static final float mmPerInch        = 25.4f;
+    public static final float mmTargetHeight   = (6) * mmPerInch;
     // the height of the center of the target image above the floor
 
-    VuforiaTrackables targetsUltimateGoal = null;
-    List<VuforiaTrackable> allTrackables = null;
+    public VuforiaTrackables targetsUltimateGoal = null;
+    public List<VuforiaTrackable> allTrackables = null;
 
     // Constants for perimeter targets
-    private static final float halfField = 72 * mmPerInch;
-    private static final float quadField  = 36 * mmPerInch;
+    public static final float halfField = 72 * mmPerInch;
+    public static final float quadField  = 36 * mmPerInch;
 
-    private static final CameraDirection CAMERA_CHOICE = BACK;
-    private static final boolean PHONE_IS_PORTRAIT = false  ;
+    public static final CameraDirection CAMERA_CHOICE = BACK;
+    public static final boolean PHONE_IS_PORTRAIT = false  ;
 
     // Class Members
-    private OpenGLMatrix lastLocation = null;
-    private VuforiaLocalizer vuforiaNav = null;
-    private boolean targetVisible = false;
-    private float phoneXRotate    = 0;
-    private float phoneYRotate    = 0;
-    private float phoneZRotate    = 0;
+    public OpenGLMatrix lastLocation = null;
+    public boolean targetVisible = false;
+    public float phoneXRotate    = 0;
+    public float phoneYRotate    = 0;
+    public float phoneZRotate    = 0;
 
     //variables for object detection, not navigation
+    //private ClosableVuforiaLocalizer vuforiaRing;
+
 
     //variables for object detection
-    private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
-    private static final String LABEL_FIRST_ELEMENT = "Quad";
-    private static final String LABEL_SECOND_ELEMENT = "Single";
+    public static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
+    public static final String LABEL_FIRST_ELEMENT = "Quad";
+    public static final String LABEL_SECOND_ELEMENT = "Single";
     //private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
-    private VuforiaLocalizer vuforiaRing;
-    private TFObjectDetector tfod;
+    public TFObjectDetector tfod;
 
-    private static List<Recognition> lastRingRecognitions = new ArrayList<Recognition>();
+    public static List<Recognition> lastRingRecognitions = new ArrayList<Recognition>();
 
 
     //variables to maintain a heading
-    private double previousHeading = 0;
-    private double deadband = toRadians(3);
+    public double previousHeading = 0;
+    public double deadband = toRadians(3);
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -183,11 +185,13 @@ public class Autonomous extends OpMode
 
     private int box = 1; //stores the box that the wobblegoal needs to be dropped in
     private boolean found = false; //allows us to not have to wait the time if there is a detection
-    private boolean doOnce = true;
+    private boolean ringDetectionNotDeintialized = true;
+    private boolean navNotInitialized = true;
+    double start;
 
     @Override
     public void loop() {
-        if (runtime.time() < 10 && !found) {
+        if (runtime.time() < 20 && !found) {
             //get all recognitions from object detection code and displays an ArrayList with all recognitions
             List<Recognition> recognitions = getRingRecognitions();
             telemetry.addData("detectedRecognitions", recognitions);
@@ -199,21 +203,30 @@ public class Autonomous extends OpMode
                 found = true;
             }
             telemetry.addData("wobbleGoalBox", box);
+            start = runtime.time();
         }
 
-        else {
-
-            if (doOnce) {
+        else { //shut down object detection so vuforia doesn't die
+            if (ringDetectionNotDeintialized) {
                 tfod.shutdown();
-                doOnce = false;
-            } //shut down object detection so vuforia doesn't die
+                ringDetectionNotDeintialized = false;
+            }
 
 
             //initialize navigation
-            initVuforiaNavigation(); //start initializing vuforia
-            targetsUltimateGoal.activate();
+            if (/*runtime.time() - start > 5 && */navNotInitialized) {
+                initVuforiaNavigation(); //start initializing vuforia
+                targetsUltimateGoal.activate();
+                navNotInitialized = false;
+            }
 
-            telemetry.addData("NavTarget", findVisibileTarget());
+            if (findVisibileTarget() != null) {
+                telemetry.addData("lastLocationDisplacement", lastLocation.getTranslation());
+            }
+
+
+
+
 // Provide feedback as to where the robot is located (if we know).
             //telemetry.addData("target", findVisibileTarget());
             /*if (targetVisible) {
@@ -247,14 +260,24 @@ public class Autonomous extends OpMode
         rightRearDrive.setPower(0.0);
 
         // Disable tracking when we are done;
+
         if (targetsUltimateGoal != null) {
             targetsUltimateGoal.deactivate();
         }
+
 
         //closes object detection to save system resources
         if (tfod != null) {
             tfod.shutdown();
         }
+
+        //<------------------------------------------------------------------------ IT DIES HERE AS IT HAPPENS WHEN THE OPMODE IS DOING CLEANUP
+        /*@Override public void onOpModePostStop(OpMode opMode)
+        {
+            /* We automatically shut down after the opmode (in which we are started) stops.  /
+            close();
+        }
+    }*/
     }
 
     private OpenGLMatrix findVisibileTarget() {
@@ -279,9 +302,13 @@ public class Autonomous extends OpMode
     }
 
     private int findCorrectBox(List<Recognition> recognitions) {
-
         if (recognitions.size() > 0) {
-            if (recognitions.get(0).getLabel().equals("Single"))
+            Recognition highestConfidence = recognitions.get(0);
+            for (Recognition ring : recognitions) {
+                if (highestConfidence.getConfidence() < ring.getConfidence())
+                    highestConfidence = ring;
+            }
+            if (highestConfidence.getLabel().equals("Single"))
                 return 2; //returns 1 if recognition is Single
             else
                 return 3; // returns 2 if the recognition is a Quad
@@ -295,23 +322,26 @@ public class Autonomous extends OpMode
          * We can pass Vuforia the handle to a camera preview resource (on the RC phone);
          * If no camera monitor is desired, use the parameter-less constructor instead (commented out below).
          */
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+        //Vuforia.deinit(); //comment if navigation is used first
 
-        //VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        //VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
         parameters.cameraDirection   = CAMERA_CHOICE;
 
         // Make sure extended tracking is disabled for this example.
-        parameters.useExtendedTracking = false;
+        //parameters.useExtendedTracking = false;
 
         //  Instantiate the Vuforia engine
-        vuforiaNav = ClassFactory.getInstance().createVuforia(parameters);
+        //vuforia = new ClosableVuforiaLocalizer(parameters);
 
         // Load the data sets for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
-        targetsUltimateGoal = this.vuforiaNav.loadTrackablesFromAsset("UltimateGoal");
+        System.out.println(vuforia.toString());
+        targetsUltimateGoal = this.vuforia.loadTrackablesFromAsset("UltimateGoal");
         VuforiaTrackable blueTowerGoalTarget = targetsUltimateGoal.get(0);
         blueTowerGoalTarget.setName("Blue Tower Goal Target");
         VuforiaTrackable redTowerGoalTarget = targetsUltimateGoal.get(1);
@@ -414,15 +444,17 @@ public class Autonomous extends OpMode
     private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters();//tfodMonitorViewId); //uncomment to use camera monitor
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId); //comment to not use camera monitor
 
 
         tfodParameters.minResultConfidence = 0.8f;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforiaRing);
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 
     private void initVuforiaTfod() {
+        //Vuforia.deinit(); //uncomment to use object detection after navigation
+
         /*
          * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
          */
@@ -432,7 +464,7 @@ public class Autonomous extends OpMode
         parameters.cameraDirection = CameraDirection.BACK;
 
         //  Instantiate the Vuforia engine
-        vuforiaRing = ClassFactory.getInstance().createVuforia(parameters);
+        vuforia = new ClosableVuforiaLocalizer(parameters);
 
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
     }
@@ -465,16 +497,17 @@ public class Autonomous extends OpMode
         return lastRingRecognitions;
     }
 
-    private List<Recognition> getSingles() {
+    private List<Recognition> getSingles() { //can be used to find standalone rings on the field after shooting
         List<Recognition> singles = new ArrayList();
         List<Recognition> recognition = getRingRecognitions();
         for (int i = 0; i < recognition.size(); i++) {
             if (recognition.get(i).getLabel().equals("Single"));
-                singles.add(recognition.get(i));
+            singles.add(recognition.get(i));
         }
 
         return singles;
     }
+
     //returns the current heading of the robot relative to the starting position
     public double getHeading() {
         return imu.getAngularOrientation().firstAngle;
@@ -500,7 +533,7 @@ public class Autonomous extends OpMode
         return 0; //if within deadband chill
     }
 
-    public void moveBot(double drive, double rotate, double strafe, double scaleFactor, boolean maintainHeading)
+    public void moveBot(double drive, double rotate, double strafe, double scaleFactor, boolean maintainHeadingWGyro)
     {
         // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
 //        robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -510,10 +543,12 @@ public class Autonomous extends OpMode
         double wheelSpeeds[] = new double[4];
 
         //adjust rotation parameter to spin opposite to rotation drift
-        if (rotate != 0)
-            previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
-        else
-            rotate += counterspin();
+        if (maintainHeadingWGyro) {
+            if (rotate != 0)
+                previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
+            else
+                rotate += counterspin();
+        }
 
         wheelSpeeds[0] = strafe + drive - rotate;
         wheelSpeeds[1] = strafe - drive + rotate;

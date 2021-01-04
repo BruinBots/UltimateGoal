@@ -84,48 +84,49 @@ public class AutonomousTesting extends OpMode
 
     double power = 0.3; //used to control max drive power
 
-    private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
+    public ClosableVuforiaLocalizer vuforia;
+
+    public static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
-    private static final float mmPerInch        = 25.4f;
-    private static final float mmTargetHeight   = (6) * mmPerInch;
+    public static final float mmPerInch        = 25.4f;
+    public static final float mmTargetHeight   = (6) * mmPerInch;
     // the height of the center of the target image above the floor
 
-    private ClosableVuforiaLocalizer vuforiaNav;
-    private VuforiaTrackables targetsUltimateGoal = null;
-    private List<VuforiaTrackable> allTrackables = null;
+    public VuforiaTrackables targetsUltimateGoal = null;
+    public List<VuforiaTrackable> allTrackables = null;
 
     // Constants for perimeter targets
-    private static final float halfField = 72 * mmPerInch;
-    private static final float quadField  = 36 * mmPerInch;
+    public static final float halfField = 72 * mmPerInch;
+    public static final float quadField  = 36 * mmPerInch;
 
-    private static final CameraDirection CAMERA_CHOICE = BACK;
-    private static final boolean PHONE_IS_PORTRAIT = false  ;
+    public static final CameraDirection CAMERA_CHOICE = BACK;
+    public static final boolean PHONE_IS_PORTRAIT = false  ;
 
     // Class Members
-    private OpenGLMatrix lastLocation = null;
-    private boolean targetVisible = false;
-    private float phoneXRotate    = 0;
-    private float phoneYRotate    = 0;
-    private float phoneZRotate    = 0;
+    public OpenGLMatrix lastLocation = null;
+    public boolean targetVisible = false;
+    public float phoneXRotate    = 0;
+    public float phoneYRotate    = 0;
+    public float phoneZRotate    = 0;
 
     //variables for object detection, not navigation
-    private ClosableVuforiaLocalizer vuforiaRing;
+    //private ClosableVuforiaLocalizer vuforiaRing;
 
 
     //variables for object detection
-    private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
-    private static final String LABEL_FIRST_ELEMENT = "Quad";
-    private static final String LABEL_SECOND_ELEMENT = "Single";
+    public static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
+    public static final String LABEL_FIRST_ELEMENT = "Quad";
+    public static final String LABEL_SECOND_ELEMENT = "Single";
     //private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
-    private TFObjectDetector tfod;
+    public TFObjectDetector tfod;
 
-    private static List<Recognition> lastRingRecognitions = new ArrayList<Recognition>();
+    public static List<Recognition> lastRingRecognitions = new ArrayList<Recognition>();
 
 
     //variables to maintain a heading
-    private double previousHeading = 0;
-    private double deadband = toRadians(3);
+    public double previousHeading = 0;
+    public double deadband = toRadians(3);
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -190,7 +191,7 @@ public class AutonomousTesting extends OpMode
 
     @Override
     public void loop() {
-        if (runtime.time() < 1 && !found) {
+        if (runtime.time() < 20 && !found) {
             //get all recognitions from object detection code and displays an ArrayList with all recognitions
             List<Recognition> recognitions = getRingRecognitions();
             telemetry.addData("detectedRecognitions", recognitions);
@@ -207,7 +208,6 @@ public class AutonomousTesting extends OpMode
 
         else { //shut down object detection so vuforia doesn't die
             if (ringDetectionNotDeintialized) {
-                //tfod.deactivate();
                 tfod.shutdown();
                 ringDetectionNotDeintialized = false;
             }
@@ -220,9 +220,8 @@ public class AutonomousTesting extends OpMode
                 navNotInitialized = false;
             }
 
-            if (targetVisible) {
+            if (findVisibileTarget() != null) {
                 telemetry.addData("lastLocationDisplacement", lastLocation.getTranslation());
-
             }
 
 
@@ -323,25 +322,26 @@ public class AutonomousTesting extends OpMode
          * We can pass Vuforia the handle to a camera preview resource (on the RC phone);
          * If no camera monitor is desired, use the parameter-less constructor instead (commented out below).
          */
-        Vuforia.deinit(); //comment if navigation is used first
+        //Vuforia.deinit(); //comment if navigation is used first
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+        //VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
 
-        //VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
         parameters.cameraDirection   = CAMERA_CHOICE;
 
         // Make sure extended tracking is disabled for this example.
-        parameters.useExtendedTracking = false;
+        //parameters.useExtendedTracking = false;
 
         //  Instantiate the Vuforia engine
-        vuforiaNav = new ClosableVuforiaLocalizer(parameters);
+        //vuforia = new ClosableVuforiaLocalizer(parameters);
 
         // Load the data sets for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
-        targetsUltimateGoal = this.vuforiaNav.loadTrackablesFromAsset("UltimateGoal");
+        System.out.println(vuforia.toString());
+        targetsUltimateGoal = this.vuforia.loadTrackablesFromAsset("UltimateGoal");
         VuforiaTrackable blueTowerGoalTarget = targetsUltimateGoal.get(0);
         blueTowerGoalTarget.setName("Blue Tower Goal Target");
         VuforiaTrackable redTowerGoalTarget = targetsUltimateGoal.get(1);
@@ -448,7 +448,7 @@ public class AutonomousTesting extends OpMode
 
 
         tfodParameters.minResultConfidence = 0.8f;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforiaRing);
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 
@@ -464,7 +464,7 @@ public class AutonomousTesting extends OpMode
         parameters.cameraDirection = CameraDirection.BACK;
 
         //  Instantiate the Vuforia engine
-        vuforiaRing = new ClosableVuforiaLocalizer(parameters);
+        vuforia = new ClosableVuforiaLocalizer(parameters);
 
         // Loading trackables is not necessary for the TensorFlow Object Detection engine.
     }
