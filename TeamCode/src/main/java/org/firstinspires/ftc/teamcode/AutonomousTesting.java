@@ -34,7 +34,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.vuforia.Vuforia;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
@@ -154,7 +153,7 @@ public class AutonomousTesting extends OpMode
         //initVuforiaNavigation();
 
         //initialize vision components
-        initVuforiaTfod();
+        initVuforia();
         initTfod();
 
 
@@ -187,11 +186,15 @@ public class AutonomousTesting extends OpMode
     private boolean found = false; //allows us to not have to wait the time if there is a detection
     private boolean ringDetectionNotDeintialized = true;
     private boolean navNotInitialized = true;
-    double start;
+    private double start;
+    private boolean wobbleGoalDroppedOff = false;
 
     @Override
     public void loop() {
-        if (runtime.time() < 20 && !found) {
+        telemetry.addData("wobbleGoalBox", box);
+
+
+        if (runtime.time() < 5 && !found) {
             //get all recognitions from object detection code and displays an ArrayList with all recognitions
             List<Recognition> recognitions = getRingRecognitions();
             telemetry.addData("detectedRecognitions", recognitions);
@@ -202,7 +205,6 @@ public class AutonomousTesting extends OpMode
                 box = correctBox;
                 found = true;
             }
-            telemetry.addData("wobbleGoalBox", box);
             start = runtime.time();
         }
 
@@ -212,36 +214,26 @@ public class AutonomousTesting extends OpMode
                 ringDetectionNotDeintialized = false;
             }
 
-
             //initialize navigation
             if (/*runtime.time() - start > 5 && */navNotInitialized) {
-                initVuforiaNavigation(); //start initializing vuforia
+                initNavigation(); //start initializing vuforia
                 targetsUltimateGoal.activate();
                 navNotInitialized = false;
             }
 
-            if (findVisibileTarget() != null) {
-                telemetry.addData("lastLocationDisplacement", lastLocation.getTranslation());
-            }
+            findVisibileTarget();
 
-
-
-
-// Provide feedback as to where the robot is located (if we know).
-            //telemetry.addData("target", findVisibileTarget());
-            /*if (targetVisible) {
-                // express position (translation) of robot in inches.
-                VectorF translation = lastLocation.getTranslation();
+            if (targetVisible) {
                 telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
-
-                // express the rotation of the robot in degrees.
+                        lastLocation.getTranslation().get(0) / mmPerInch, lastLocation.getTranslation().get(1) / mmPerInch, lastLocation.getTranslation().get(2) / mmPerInch);
                 Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
                 telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+
+                if (!wobbleGoalDroppedOff) {
+                    dropOffWobbleGoal();
+                }
             }
-            else {
-                telemetry.addData("Visible Target", "none");
-            }*/
+
 
         }
 
@@ -280,6 +272,54 @@ public class AutonomousTesting extends OpMode
     }*/
     }
 
+    private void dropOffWobbleGoal() {
+        //no rings
+        if (box == 1 && distanceToDestination(12, 60) > 6)
+        {
+            //move to translation 12in, 60in
+            double driveAngle = angleToDestination(12, 60);
+            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false);
+            return;
+        }
+
+        //1 ring
+        else if (box == 2 && distanceToDestination(36, 36) > 6) {
+            //move to translation 36in, 36in
+            double driveAngle = angleToDestination(36, 36);
+            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false);
+            return;
+
+        }
+
+        //4 rings
+        else if (box == 3 && distanceToDestination(60, 60) > 6) {
+            //move to translation 60in, 60in
+            double driveAngle = angleToDestination(60, 60);
+            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false);
+            return;
+        }
+
+        //only way to get here if the robot is within 6 inches of the center of the square it is supposed to be in
+        wobbleGoalDroppedOff = true;
+    }
+
+    //given displacement from center field in inches, which direction does the robot need to move to get there.
+    private double angleToDestination(double x, double y) { //x and y are kinda flipped in the OpenGL matrix but I'll be consistent
+        double xDifference = mmToInches(lastLocation.getTranslation().get(0)) - x;
+        double yDifference = mmToInches(lastLocation.getTranslation().get(1)) - y;
+
+        return Math.atan2(xDifference, yDifference);
+    }
+
+    private double distanceToDestination(double x, double y) {
+        double xDifference = mmToInches(lastLocation.getTranslation().get(0)) - x;
+        double yDifference = mmToInches(lastLocation.getTranslation().get(1)) - y;
+
+        telemetry.addData("Distance to destination", Math.hypot(xDifference, yDifference));
+
+        return Math.hypot(xDifference, yDifference);
+    }
+
     private OpenGLMatrix findVisibileTarget() {
         // check all the trackable targets to see which one (if any) is visible.
         targetVisible = false;
@@ -316,7 +356,7 @@ public class AutonomousTesting extends OpMode
         return 1; //returns 3 if there are no recognitions aka no rings
     }
 
-    private void initVuforiaNavigation() {
+    private void initNavigation() {
         /*
          * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
          * We can pass Vuforia the handle to a camera preview resource (on the RC phone);
@@ -452,7 +492,7 @@ public class AutonomousTesting extends OpMode
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 
-    private void initVuforiaTfod() {
+    private void initVuforia() {
         //Vuforia.deinit(); //uncomment to use object detection after navigation
 
         /*
@@ -497,17 +537,6 @@ public class AutonomousTesting extends OpMode
         return lastRingRecognitions;
     }
 
-    private List<Recognition> getSingles() { //can be used to find standalone rings on the field after shooting
-        List<Recognition> singles = new ArrayList();
-        List<Recognition> recognition = getRingRecognitions();
-        for (int i = 0; i < recognition.size(); i++) {
-            if (recognition.get(i).getLabel().equals("Single"));
-                singles.add(recognition.get(i));
-        }
-
-        return singles;
-    }
-
     //returns the current heading of the robot relative to the starting position
     public double getHeading() {
         return imu.getAngularOrientation().firstAngle;
@@ -519,7 +548,7 @@ public class AutonomousTesting extends OpMode
     }
 
     // when called figures out if it is out of the deadband and returns a double that is designed to spin the opposite of
-    public double counterspin() {
+    public double counterspinGyro() {
         double error = getError(previousHeading); //so we don't have to keep calling this
         if (Math.abs(error) > 5 * deadband) { //if the error is significantly larger than deadband correct more aggressively
             return (error > 0) ? -1 : 1;
@@ -547,7 +576,7 @@ public class AutonomousTesting extends OpMode
             if (rotate != 0)
                 previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
             else
-                rotate += counterspin();
+                rotate += counterspinGyro();
         }
 
         wheelSpeeds[0] = strafe + drive - rotate;
@@ -580,6 +609,8 @@ public class AutonomousTesting extends OpMode
         rightFrontDrive.setPower(wheelSpeeds[1] * scaleFactor);
         leftRearDrive.setPower(wheelSpeeds[2] * scaleFactor);
         rightRearDrive.setPower(wheelSpeeds[3] * scaleFactor);
+
+        telemetry.addData("Direction of Movement", toDegrees(Math.atan2(drive, strafe)));
         //return wheelSpeeds;
     }
 
@@ -589,6 +620,10 @@ public class AutonomousTesting extends OpMode
 
     public double toRadians(double degrees) {
         return degrees * Math.PI / 180;
+    }
+
+    private double mmToInches(double mm) {
+        return mm / mmPerInch;
     }
 
 }
