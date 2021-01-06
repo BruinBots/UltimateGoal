@@ -228,11 +228,13 @@ public class AutonomousTesting extends OpMode
                         lastLocation.getTranslation().get(0) / mmPerInch, lastLocation.getTranslation().get(1) / mmPerInch, lastLocation.getTranslation().get(2) / mmPerInch);
                 Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
                 telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
-
-                if (!wobbleGoalDroppedOff) {
-                    dropOffWobbleGoal();
-                }
             }
+
+            if (!wobbleGoalDroppedOff && targetVisible) {
+                dropOffWobbleGoal();
+            }
+            else
+                moveBot(0, 0, 0, 0, false, false);
 
 
         }
@@ -278,7 +280,7 @@ public class AutonomousTesting extends OpMode
         {
             //move to translation 12in, 60in
             double driveAngle = angleToDestination(12, 60);
-            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false);
+            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false, true);
             return;
         }
 
@@ -286,7 +288,7 @@ public class AutonomousTesting extends OpMode
         else if (box == 2 && distanceToDestination(36, 36) > 6) {
             //move to translation 36in, 36in
             double driveAngle = angleToDestination(36, 36);
-            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false);
+            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false, true);
             return;
 
         }
@@ -295,7 +297,7 @@ public class AutonomousTesting extends OpMode
         else if (box == 3 && distanceToDestination(60, 60) > 6) {
             //move to translation 60in, 60in
             double driveAngle = angleToDestination(60, 60);
-            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false);
+            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false, true);
             return;
         }
 
@@ -305,8 +307,14 @@ public class AutonomousTesting extends OpMode
 
     //given displacement from center field in inches, which direction does the robot need to move to get there.
     private double angleToDestination(double x, double y) { //x and y are kinda flipped in the OpenGL matrix but I'll be consistent
-        double xDifference = mmToInches(lastLocation.getTranslation().get(0)) - x;
+        double xDifference = (mmToInches(lastLocation.getTranslation().get(0)) - x) * -1;
         double yDifference = mmToInches(lastLocation.getTranslation().get(1)) - y;
+
+        telemetry.addData("xDifference", xDifference);
+        telemetry.addData("yDifference", yDifference);
+
+        telemetry.addData("Direction to destination", (360 + toDegrees(Math.atan2(xDifference, yDifference))) % 360);
+
 
         return Math.atan2(xDifference, yDifference);
     }
@@ -557,15 +565,31 @@ public class AutonomousTesting extends OpMode
             return (error > 0) ? -0.5 : 0.5;
         }
         else if (Math.abs(error) >  deadband) { //if the error is slightly larger than deadband be nice
-            return (error > 0) ? -0.3 : 0.3;
+            return (error > 0) ? -0.2 : 0.2;
         }
         return 0; //if within deadband chill
     }
 
-    public void moveBot(double drive, double rotate, double strafe, double scaleFactor, boolean maintainHeadingWGyro)
+    public double counterspinNav(double desired) {
+        Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+        double error = rotation.thirdAngle - desired;
+
+        if (Math.abs(error) > 5 * deadband) { //if the error is significantly larger than deadband correct more aggressively
+            return (error > 0) ? 1 : -1;
+        }
+        else if (Math.abs(error) >  2 * deadband) { //if the error is slightly larger than deadband be nice
+            return (error > 0) ? 0.5 : -0.5;
+        }
+        else if (Math.abs(error) >  deadband) { //if the error is slightly larger than deadband be nice
+            return (error > 0) ? 0.2 : -0.2;
+        }
+        return 0; //if within deadband chill
+    }
+
+    public void moveBot(double drive, double rotate, double strafe, double scaleFactor, boolean maintainHeadingWGyro, boolean maintainHeadingWNav)
     {
         // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
-//        robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // How to normalize...Version 3
         //Put the raw wheel speeds into an array
@@ -577,6 +601,13 @@ public class AutonomousTesting extends OpMode
                 previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
             else
                 rotate += counterspinGyro();
+        }
+
+        if (maintainHeadingWNav && targetVisible) {
+            /*if (rotate != 0)
+                previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
+            else*/
+                rotate += counterspinNav(0);
         }
 
         wheelSpeeds[0] = strafe + drive - rotate;
@@ -609,9 +640,6 @@ public class AutonomousTesting extends OpMode
         rightFrontDrive.setPower(wheelSpeeds[1] * scaleFactor);
         leftRearDrive.setPower(wheelSpeeds[2] * scaleFactor);
         rightRearDrive.setPower(wheelSpeeds[3] * scaleFactor);
-
-        telemetry.addData("Direction of Movement", (360 + toDegrees(Math.atan2(drive, strafe))) % 360);
-        //return wheelSpeeds;
     }
 
     public double toDegrees(double radians) { //convert to degrees from radians
