@@ -224,6 +224,7 @@ public class AutonomousTesting extends OpMode
             findVisibileTarget();
 
             if (targetVisible) {
+                telemetry.addData("TargetVisible", targetVisible);
                 telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
                         lastLocation.getTranslation().get(0) / mmPerInch, lastLocation.getTranslation().get(1) / mmPerInch, lastLocation.getTranslation().get(2) / mmPerInch);
                 Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
@@ -280,7 +281,8 @@ public class AutonomousTesting extends OpMode
         {
             //move to translation 12in, 60in
             double driveAngle = angleToDestination(12, 60);
-            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false, true);
+            //moveBot(1, 0, 0, .5, false, false);
+            moveBot(Math.cos(driveAngle), 0, /*Math.cos(driveAngle)*/ 0, .5, false, true);
             return;
         }
 
@@ -288,7 +290,7 @@ public class AutonomousTesting extends OpMode
         else if (box == 2 && distanceToDestination(36, 36) > 6) {
             //move to translation 36in, 36in
             double driveAngle = angleToDestination(36, 36);
-            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false, true);
+            moveBot(Math.sin(driveAngle), 0, /*Math.cos(driveAngle)*/ 0, .5, false, true);
             return;
 
         }
@@ -297,7 +299,7 @@ public class AutonomousTesting extends OpMode
         else if (box == 3 && distanceToDestination(60, 60) > 6) {
             //move to translation 60in, 60in
             double driveAngle = angleToDestination(60, 60);
-            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .2, false, true);
+            moveBot(Math.sin(driveAngle), 0, Math.cos(driveAngle), .5, false, true);
             return;
         }
 
@@ -375,10 +377,11 @@ public class AutonomousTesting extends OpMode
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         //VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
 
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
         parameters.cameraDirection   = CAMERA_CHOICE;
+        parameters.useExtendedTracking = false;
 
         // Make sure extended tracking is disabled for this example.
         //parameters.useExtendedTracking = false;
@@ -591,24 +594,25 @@ public class AutonomousTesting extends OpMode
         // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
         //robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        telemetry.addData("drive", drive);
+        telemetry.addData("strafe", strafe);
+
+        //----------------------------------------------------------
+
+
+
+        // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
+//        robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
         // How to normalize...Version 3
         //Put the raw wheel speeds into an array
         double wheelSpeeds[] = new double[4];
 
         //adjust rotation parameter to spin opposite to rotation drift
-        if (maintainHeadingWGyro) {
-            if (rotate != 0)
-                previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
-            else
-                rotate += counterspinGyro();
-        }
-
-        if (maintainHeadingWNav && targetVisible) {
-            /*if (rotate != 0)
-                previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
-            else*/
-                rotate += counterspinNav(0);
-        }
+        //if (rotate != 0)
+        //    previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
+        //else
+        //    rotate += counterspin();
 
         wheelSpeeds[0] = strafe + drive - rotate;
         wheelSpeeds[1] = strafe - drive + rotate;
@@ -640,6 +644,57 @@ public class AutonomousTesting extends OpMode
         rightFrontDrive.setPower(wheelSpeeds[1] * scaleFactor);
         leftRearDrive.setPower(wheelSpeeds[2] * scaleFactor);
         rightRearDrive.setPower(wheelSpeeds[3] * scaleFactor);
+
+
+
+
+        //------------------------------------------------------------
+        // How to normalize...Version 3
+        //Put the raw wheel speeds into an array
+        /*double wheelSpeeds[] = new double[4];
+
+        //adjust rotation parameter to spin opposite to rotation drift
+        if (maintainHeadingWGyro) {
+            if (rotate != 0)
+                previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
+            else
+                rotate += counterspinGyro();
+        }
+
+        /if (maintainHeadingWNav && targetVisible) {
+                rotate += counterspinNav(0);
+        }/*
+
+        wheelSpeeds[0] = strafe + drive - rotate;
+        wheelSpeeds[1] = strafe - drive + rotate;
+        wheelSpeeds[2] = strafe - drive - rotate;
+        wheelSpeeds[3] = strafe + drive +  rotate;
+        // Find the magnitude of the first element in the array
+        double maxMagnitude = Math.abs(wheelSpeeds[0]);
+        // If any of the other wheel speeds are bigger, save that value in maxMagnitude
+        for (int i = 1; i < wheelSpeeds.length; i++)
+        {
+            double magnitude = Math.abs(wheelSpeeds[i]);
+            if (magnitude > maxMagnitude)
+            {
+                maxMagnitude = magnitude;
+            }
+        }
+        // Normalize all of the magnitudes to below 1
+        if (maxMagnitude > 1.0)
+        {
+            for (int i = 0; i < wheelSpeeds.length; i++)
+            {
+                wheelSpeeds[i] /= maxMagnitude;
+            }
+        }
+        // Send the normalized values to the wheels, further scaled by the user
+
+        // Send calculated power to wheels
+        leftFrontDrive.setPower(wheelSpeeds[0] * scaleFactor);
+        rightFrontDrive.setPower(wheelSpeeds[1] * scaleFactor);
+        leftRearDrive.setPower(wheelSpeeds[2] * scaleFactor);
+        rightRearDrive.setPower(wheelSpeeds[3] * scaleFactor);*/
     }
 
     public double toDegrees(double radians) { //convert to degrees from radians
