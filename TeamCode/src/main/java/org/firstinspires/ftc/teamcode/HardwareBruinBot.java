@@ -52,6 +52,12 @@ public class HardwareBruinBot {
     public DcMotor leftRearDrive = null;
     public DcMotor rightFrontDrive = null;
     public DcMotor rightRearDrive = null;
+
+    public BNO055IMU imu = null;
+
+
+    public Servo flickyShooty = null;
+    public DcMotor shooter = null;
 //    public DcMotor armExtendMotor = null;
 //    public DcMotor armLiftMotor = null;
 //    public DcMotor tapeMotor = null;
@@ -64,7 +70,6 @@ public class HardwareBruinBot {
 //    public DigitalChannel frontTouchSensor;
 //    public DigitalChannel backTouchSensor;
 
-    public BNO055IMU imu = null;
 
 //    public ModernRoboticsI2cRangeSensor rangeSensor;
 //    public ColorSensor colorSensor;

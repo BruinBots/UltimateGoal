@@ -36,6 +36,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
@@ -380,8 +381,10 @@ public class AutonomousTesting extends OpMode
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection   = CAMERA_CHOICE;
+        //parameters.cameraDirection   = CAMERA_CHOICE;
         parameters.useExtendedTracking = false;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
 
         // Make sure extended tracking is disabled for this example.
         //parameters.useExtendedTracking = false;
@@ -512,7 +515,9 @@ public class AutonomousTesting extends OpMode
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection = CameraDirection.BACK;
+        //parameters.cameraDirection = CameraDirection.BACK;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
 
         //  Instantiate the Vuforia engine
         vuforia = new ClosableVuforiaLocalizer(parameters);
