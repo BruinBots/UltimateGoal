@@ -36,7 +36,9 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.teamcode.VinceHardwareBruinBot;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
@@ -55,6 +57,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGR
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.INTRINSIC;
 import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
 
 /**
@@ -78,11 +81,30 @@ public class VinceTeleopTesting extends OpMode
     // Declare OpMode members.
     public ElapsedTime runtime = new ElapsedTime();
     public DcMotor leftFrontDrive = null;
-    public DcMotor rightFrontDrive = null;
     public DcMotor leftRearDrive = null;
+    public DcMotor rightFrontDrive = null;
     public DcMotor rightRearDrive = null;
+
+    public DcMotor ringShooterMotor = null;
+    public DcMotor wobbleMotor = null;
+    public DcMotor intakeMotor = null;
+
+    public Servo fireServo = null;
+
     public BNO055IMU imu = null;
 
+    // Variables used to determine robot position on the field and range/bearing to target
+    public double               robotX = 0;             // X position in Field Centric Coordinates (in)
+    public double               robotY = 0;             // Y position in Field Centric Coordinates (in)
+    public double               robotBearing = 0;       // Robot's rotation around the Z axis (CCW is positive) in Field Centric Coordinates (deg)
+    public double               targetRange = 0;        // Range from robot's center to target (in)
+    public double               targetBearing = 0;      // Heading of the target , relative to the robot's unrotated center (deg)
+    public double               relativeBearing = 0;    // Heading to the target from the robot's current bearing. (deg)
+    public double               visTgtX = 0;            // Visible Target X component in field centric coordinates
+    public double               visTgtY = 0;            // Visible Target Y component in field centric coordinates
+    public static double        angleCloseEnough = 2;   // Deadband around angle (deg)
+    public static double        rangeCloseEnough = 2;   // Deadband around range (in)
+    public static double        shotRange = 80;         // Optimum shot distance behind the shot line (in)
     double power = 0.7; //used to control max drive power
 
     private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
@@ -90,6 +112,7 @@ public class VinceTeleopTesting extends OpMode
     // We will define some constants and conversions here
     private static final float mmPerInch        = 25.4f;
     private static final float mmTargetHeight   = (6) * mmPerInch;
+
     // the height of the center of the target image above the floor
 
     VuforiaTrackables targetsUltimateGoal = null;
@@ -111,17 +134,17 @@ public class VinceTeleopTesting extends OpMode
     private float phoneZRotate    = 0;
 
     //variables for object detection, not navigation
-    /*
+
     //variables for object detection
     private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
     private static final String LABEL_FIRST_ELEMENT = "Quad";
     private static final String LABEL_SECOND_ELEMENT = "Single";
-    private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
-    private VuforiaLocalizer vuforia;
+    //private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
+    //private VuforiaLocalizer vuforia;
     private TFObjectDetector tfod;
 
     public static List<Recognition> lastRecognitions = new ArrayList<Recognition>();
-*/
+
 
     //variables to maintain a heading
     public double previousHeading = 0;
@@ -138,7 +161,7 @@ public class VinceTeleopTesting extends OpMode
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
 
-        HardwareBruinBot robot = new HardwareBruinBot();
+        VinceHardwareBruinBot robot = new VinceHardwareBruinBot();
 
         robot.init(hardwareMap);
 
@@ -151,16 +174,7 @@ public class VinceTeleopTesting extends OpMode
         //init imu
         imu = robot.imu;
 
-        //initVuforiaNavigation();
-
-
-        //initialize vision components
-        /*initVuforia();
-        initTfod();
-
-        if (tfod != null) {
-            tfod.activate();
-        }*/
+        initVuforiaNavigation();
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
@@ -178,8 +192,7 @@ public class VinceTeleopTesting extends OpMode
      */
     @Override
     public void start() {
-        //targetsUltimateGoal.activate();
-        //runtime.reset();
+        runtime.reset();
     }
 
     /*
@@ -187,11 +200,13 @@ public class VinceTeleopTesting extends OpMode
      */
     @Override
     public void loop() {
+
+
         // Setup a variable for each drive wheel to save power level for telemetry
 
-        double x  = gamepad1.left_stick_x;
-        double y = -gamepad1.left_stick_y;
-        double r = gamepad1.right_stick_x;
+        double drive  = gamepad1.left_stick_y;
+        double strafe = gamepad1.left_stick_x;
+        double rotate = gamepad1.right_stick_x;
 
         //double correctedAngle = getError(Math.atan2(y, x));
 
@@ -207,47 +222,28 @@ public class VinceTeleopTesting extends OpMode
         //double correctedY = Math.sin(correctedAngle) * originalMagnitude;
 
         //double[] wheelSpeeds = moveBot(x, r, y, power); //to control from a robot perspective
-        moveBot(x, r, y, power); //Basic Robot-centric Frame Driving
-        // check all the trackable targets to see which one (if any) is visible.
-        /*targetVisible = false;
-        for (VuforiaTrackable trackable : allTrackables) {
-            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
-                telemetry.addData("Visible Target", trackable.getName());
-                targetVisible = true;
 
-                // getUpdatedRobotLocation() will return null if no new information is available since
-                // the last time that call was made, or if the trackable is not currently visible.
-                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
-                if (robotLocationTransform != null) {
-                    lastLocation = robotLocationTransform;
-                }
-                break;
-            }
-        }
 
-        // Provide feedback as to where the robot is located (if we know).
-        if (targetVisible) {
-            // express position (translation) of robot in inches.
-            VectorF translation = lastLocation.getTranslation();
-            telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-                    translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+        findRobotPosition();  // Call Vuforia routines, get robot position
 
-            // express the rotation of the robot in degrees.
-            Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
-            telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+        // Insert operator gamepad actions here
+        if ((targetVisible) && (gamepad1.left_stick_button)) {
+            //  Allow the operator to position the robot to shoot a ring if a target is visible
+            alignRobotToShoot();
         }
         else {
-            telemetry.addData("Visible Target", "none");
-        }*/
+            moveBot(drive, rotate, strafe, power); //Basic Robot-centric Frame Driving
+
+        }
         telemetry.update();
 
         //get all recognitions from object detection code and displays an ArrayList with all recognitions
-        /*
-        List<Recognition> recognitions = getRecognitions();
-        if (recognitions != null)
-            lastRecognitions = recognitions;
-        telemetry.addData("detectedRecognitions", lastRecognitions);
-*/
+
+        //List<Recognition> recognitions = getRecognitions();
+        //if (recognitions != null)
+        //    lastRecognitions = recognitions;
+        //telemetry.addData("detectedRecognitions", lastRecognitions);
+
         /*
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
@@ -281,12 +277,12 @@ public class VinceTeleopTesting extends OpMode
         rightRearDrive.setPower(0.0);
 
         // Disable Tracking when we are done;
-        //targetsUltimateGoal.deactivate();
+        targetsUltimateGoal.deactivate();
 
         //closes object detection to save system resouces
-        /*if (tfod != null) {
+        if (tfod != null) {
             tfod.shutdown();
-        }*/
+        }
     }
 
     // when called figures out if it is out of the deadband and returns a double that is designed to spin the opposite of
@@ -319,20 +315,18 @@ public class VinceTeleopTesting extends OpMode
         // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
 //        robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        // Positive Drive moves forward
+        // Positive Rotation spins Left
+        // Positive Strafe moves right
+
         // How to normalize...Version 3
         //Put the raw wheel speeds into an array
         double wheelSpeeds[] = new double[4];
 
-        //adjust rotation parameter to spin opposite to rotation drift
-        /*if (rotate != 0)
-            previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
-        else
-            rotate += counterspin();*/
-
-        wheelSpeeds[0] = strafe + drive - rotate;
-        wheelSpeeds[1] = strafe - drive + rotate;// VInce: I think 1 & 2 are swapped which is why we have wonky driving
-        wheelSpeeds[2] = strafe - drive - rotate;// should be -- and -+ respectively
-        wheelSpeeds[3] = strafe + drive +  rotate;
+        wheelSpeeds[0] = drive - rotate - strafe; // Right Read
+        wheelSpeeds[1] = drive - rotate + strafe; // Right Front
+        wheelSpeeds[2] = drive + rotate + strafe; // Left Rear
+        wheelSpeeds[3] = drive + rotate - strafe; // Left Front
         // Find the magnitude of the first element in the array
         double maxMagnitude = Math.abs(wheelSpeeds[0]);
         // If any of the other wheel speeds are bigger, save that value in maxMagnitude
@@ -355,11 +349,11 @@ public class VinceTeleopTesting extends OpMode
         // Send the normalized values to the wheels, further scaled by the user
 
         // Send calculated power to wheels
-        leftFrontDrive.setPower(wheelSpeeds[0] * scaleFactor);
+        rightRearDrive.setPower(wheelSpeeds[0] * scaleFactor);
         rightFrontDrive.setPower(wheelSpeeds[1] * scaleFactor);
         leftRearDrive.setPower(wheelSpeeds[2] * scaleFactor);
-        rightRearDrive.setPower(wheelSpeeds[3] * scaleFactor);
-        //return wheelSpeeds;
+        leftFrontDrive.setPower(wheelSpeeds[3] * scaleFactor);
+
     }
 
     public void initVuforiaNavigation() {
@@ -478,7 +472,7 @@ public class VinceTeleopTesting extends OpMode
         for (VuforiaTrackable trackable : allTrackables) {
             ((VuforiaTrackableDefaultListener) trackable.getListener()).setPhoneInformation(robotFromCamera, parameters.cameraDirection);
         }
-
+        targetsUltimateGoal.activate();
     }
 
     public double toDegrees(double radians) { //convert to degrees from radians
@@ -489,6 +483,103 @@ public class VinceTeleopTesting extends OpMode
         return degrees * Math.PI / 180;
     }
 
+    // Aligns the robot with the goal and moves to an acceptable shooting range
+    public void alignRobotToShoot(){
+        double rangeError = 3;
+        double angleError = 3;
+
+        boolean rangeGood = false;
+        boolean angleGood = false;
+
+            if (Math.abs(targetRange - shotRange)> rangeCloseEnough){
+                // Still not in optimal shot position
+                rangeError = targetRange - shotRange;
+            } else {
+                rangeGood = true;
+                rangeError = 0;
+            }
+            if (Math.abs(relativeBearing) > angleCloseEnough){
+                // still not pointing the target
+                angleError = relativeBearing;  // Need to check sign here?
+            }  else{
+                angleGood = true;
+                angleError = 0;
+            }
+            if (!rangeGood || !angleGood){
+                moveBot(rangeError, angleError, 0, 0.3);
+            }
+
+
+
+
+    }
+
+    public void findRobotPosition(){
+        // check all the trackable targets to see which one (if any) is visible.
+        targetVisible = false;
+        for (VuforiaTrackable trackable : allTrackables) {
+            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
+                telemetry.addData("Visible Target", trackable.getName());
+                targetVisible = true;
+
+                // Get the position of the visible target and put the X & Y position in visTgtX and visTgtY
+                // We will use these for determining bearing and range to the visible target
+                OpenGLMatrix tgtLocation = trackable.getLocation();
+                VectorF tgtTranslation = tgtLocation.getTranslation();
+                visTgtX = tgtTranslation.get(0) / mmPerInch;
+                visTgtY = tgtTranslation.get(1) / mmPerInch;
+                //telemetry.addData("Tgt X & Y", "{X, Y} = %.1f, %.1f", visTgtX, visTgtY);
+
+                // getUpdatedRobotLocation() will return null if no new information is available since
+                // the last time that call was made, or if the trackable is not currently visible.
+                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
+                if (robotLocationTransform != null) {
+                    lastLocation = robotLocationTransform;
+                }
+                break;
+            }
+        }
+
+        // Provide feedback as to where the robot is located (if we know).
+        if (targetVisible) {
+            // express position (translation) of robot in inches.
+            VectorF translation = lastLocation.getTranslation();
+            //telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+            //        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+
+            // express the rotation of the robot in degrees.
+            Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+            //telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+
+            // Robot position is defined by the standard Matrix translation (x and y)
+            robotX = translation.get(0)/ mmPerInch;
+            robotY = translation.get(1)/ mmPerInch;
+
+            // Robot bearing (in +vc CCW cartesian system) is defined by the standard Matrix z rotation
+            robotBearing = rotation.thirdAngle;
+
+            // target range is based on distance from robot position to the visible target
+            // Pythagorean Theorum
+            targetRange = Math.sqrt(((visTgtX - robotX)*(visTgtX - robotX)) + ((visTgtY - robotY)*(visTgtY - robotY)));
+
+            // target bearing is based on angle formed between the X axis to the target range line
+            // Always use "Head minus Tail" when working with vectors
+            targetBearing = Math.toDegrees(Math.atan((visTgtY - robotY)/(visTgtX - robotX)));
+
+            // Target relative bearing is the target Heading relative to the direction the robot is pointing.
+            // This can be used as an error signal to have the robot point the target
+            relativeBearing = targetBearing - robotBearing;
+            // Display the current visible target name, robot info, target info, and required robot action.
+
+            telemetry.addData("Robot", "[X]:[Y] (Heading) [%5.0fin]:[%5.0fin] (%4.0f°)",
+                    robotX, robotY, robotBearing);
+            telemetry.addData("Target", "[TgtRange] (TgtBearing):(RelB) [%5.0fin] (%4.0f°):(%4.0f°)",
+                    targetRange, targetBearing, relativeBearing);
+        }
+        else {
+            telemetry.addData("Visible Target", "none");
+        }
+    }
     //used for object detection
     /**
      * Initialize the TensorFlow Object Detection engine.
