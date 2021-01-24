@@ -29,21 +29,16 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.teamcode.VinceHardwareBruinBot;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection;
@@ -53,12 +48,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
-import static java.lang.Thread.sleep;
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.INTRINSIC;
 import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
 
 /**
@@ -75,9 +71,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Vince TeleOp Testing", group="Iterative Opmode")
+@TeleOp(name="Vince TeleOp Testing Red", group="Iterative Opmode")
 //@Disabled
-public class VinceTeleopTesting extends OpMode
+public class VinceTeleopTesting2 extends OpMode
 {
     // Declare OpMode members.
     public ElapsedTime runtime = new ElapsedTime();
@@ -133,7 +129,7 @@ public class VinceTeleopTesting extends OpMode
     private static final float halfField = 72 * mmPerInch;
     private static final float quadField  = 36 * mmPerInch;
 
-    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
+    private static final CameraDirection CAMERA_CHOICE = BACK;
     private static final boolean PHONE_IS_PORTRAIT = false  ;
 
     // Class Members
@@ -227,6 +223,11 @@ public class VinceTeleopTesting extends OpMode
         double strafe = gamepad1.left_stick_x;
         double rotate = -gamepad1.right_stick_x;
 
+        double correctedAngle = toDegrees(Math.atan2(drive, strafe)) + 90;
+        double inputMagnitude = Math.hypot(drive, strafe);
+        double correctedDrive = Math.sin(toRadians(correctedAngle)) * inputMagnitude;
+        double correctedStrafe = Math.cos(toRadians(correctedAngle)) * inputMagnitude;
+
         findRobotPosition();  // Call Vuforia routines, get robot position
 
         // Intake  Operator Actions
@@ -242,6 +243,12 @@ public class VinceTeleopTesting extends OpMode
             }
         }
 
+        // WobbleGoal Operator Actions
+        if (gamepad1.dpad_left)
+            wobbleMotor.setPower(-0.5);
+        else if (gamepad1.dpad_right)
+            wobbleMotor.setPower(0.5);
+
         // Ring Shooter Operator Actions
         if (gamepad1.right_bumper){
             fireServo.setPosition(FIRE_SERVO);
@@ -249,7 +256,7 @@ public class VinceTeleopTesting extends OpMode
             fireServo.setPosition(STANDBY_SERVO);
         }
         if (gamepad1.left_trigger > 0.5){
-            ringShooterMotor.setPower(.7);
+            ringShooterMotor.setPower(.8);
         }else {
             ringShooterMotor.setPower(0);
         }
@@ -259,7 +266,7 @@ public class VinceTeleopTesting extends OpMode
             alignRobotToShoot();
         }
         else {
-            moveBot(drive, rotate, strafe, power); //Basic Robot-centric Frame Driving
+            moveBot(correctedDrive, rotate, correctedStrafe, power); //Basic Robot-centric Frame Driving
 
         }
         telemetry.update();

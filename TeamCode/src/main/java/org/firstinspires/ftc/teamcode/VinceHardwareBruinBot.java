@@ -38,7 +38,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-//skystone hardwaremap
+//ultimategoal hardwaremap
 
 //the place where all the variables are defined
 public class VinceHardwareBruinBot {
@@ -133,8 +133,6 @@ public class VinceHardwareBruinBot {
         leftRearDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightRearDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-
 
     }
 }
