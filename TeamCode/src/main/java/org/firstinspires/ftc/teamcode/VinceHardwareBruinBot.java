@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -55,11 +56,7 @@ public class VinceHardwareBruinBot {
 
     public Servo fireServo = null;
 
-    public static final double STANDBY_SERVO       =  0.77 ;
-    public static final double FIRE_SERVO    = 1 ;
-    public static final double WOBBLE_START  = 100 ;
-    public static final double WOBBLE_GRAB   =  200 ;
-    public static final double WOBBLE_OVER_WALL   =  120 ;
+
 
     /* local OpMode members. */
     HardwareMap hwMap = null;
@@ -103,9 +100,9 @@ public class VinceHardwareBruinBot {
         leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         leftRearDrive.setDirection(DcMotor.Direction.REVERSE);
 
-        ringShooterMotor.setDirection(DcMotor.Direction.FORWARD);
+        ringShooterMotor.setDirection(DcMotor.Direction.REVERSE); // Makes 1 the shooting direction
         wobbleMotor.setDirection(DcMotor.Direction.FORWARD);
-        intakeMotor.setDirection(DcMotor.Direction.FORWARD);
+        intakeMotor.setDirection(DcMotor.Direction.REVERSE); // Makes 1 drive the intake to suck in rings
 
         // Set drive motors to zero power
         leftFrontDrive.setPower(0);

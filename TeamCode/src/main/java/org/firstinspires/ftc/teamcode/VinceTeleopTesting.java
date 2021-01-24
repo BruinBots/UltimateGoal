@@ -53,6 +53,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
+import static java.lang.Thread.sleep;
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
@@ -105,7 +106,17 @@ public class VinceTeleopTesting extends OpMode
     public static double        angleCloseEnough = 2;   // Deadband around angle (deg)
     public static double        rangeCloseEnough = 2;   // Deadband around range (in)
     public static double        shotRange = 80;         // Optimum shot distance behind the shot line (in)
-    double power = 0.7; //used to control max drive power
+    public double               power = 0.7;            //used to control max drive power
+    public boolean              shooterOn = false;      // Track whether the ring shooter is on
+    public boolean              intakeFwd = false;       // Track whether the intake is running in the forward direction
+    public boolean              intakeRev = false;      // Track whether the intake is running in reverse
+    public static double        STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
+    public static double        FIRE_SERVO = 1;         // Position for the servo when firing a ring
+    public static double        WOBBLE_START = 100;     // Wobble Goal
+    public static double        WOBBLE_GRAB = 200;
+    public static double        WOBBLE_OVER_WALL = 120;
+    public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
+    public static double        SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
 
     private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
@@ -162,18 +173,28 @@ public class VinceTeleopTesting extends OpMode
         // step (using the FTC Robot Controller app on the phone).
 
         VinceHardwareBruinBot robot = new VinceHardwareBruinBot();
-
+        // Inititalize last wheel speed
+        for (int i = 0; i < lastwheelSpeeds.length; i++){
+            lastwheelSpeeds[i] = 0;
+        }
         robot.init(hardwareMap);
+        {
+            //init all drive wheels
+            leftFrontDrive = robot.leftFrontDrive;
+            rightFrontDrive = robot.rightFrontDrive;
+            leftRearDrive = robot.leftRearDrive;
+            rightRearDrive = robot.rightRearDrive;
 
-        //init all drive wheels
-        leftFrontDrive = robot.leftFrontDrive;
-        rightFrontDrive = robot.rightFrontDrive;
-        leftRearDrive = robot.leftRearDrive;
-        rightRearDrive = robot.rightRearDrive;
+            // init all other motors & servos
+            intakeMotor = robot.intakeMotor;
+            wobbleMotor = robot.wobbleMotor;
+            ringShooterMotor = robot.ringShooterMotor;
 
-        //init imu
-        imu = robot.imu;
+            fireServo = robot.fireServo;
 
+            //init imu
+            imu = robot.imu;
+        }
         initVuforiaNavigation();
 
         // Tell the driver that initialization is complete.
@@ -192,6 +213,7 @@ public class VinceTeleopTesting extends OpMode
      */
     @Override
     public void start() {
+        fireServo.setPosition(STANDBY_SERVO);
         runtime.reset();
     }
 
@@ -201,33 +223,38 @@ public class VinceTeleopTesting extends OpMode
     @Override
     public void loop() {
 
-
-        // Setup a variable for each drive wheel to save power level for telemetry
-
         double drive  = gamepad1.left_stick_y;
         double strafe = gamepad1.left_stick_x;
-        double rotate = gamepad1.right_stick_x;
-
-        //double correctedAngle = getError(Math.atan2(y, x));
-
-        //adjust rotation parameter to spin opposite to rotation drift
-
-        /*if (r != 0)
-            previousHeading = getHeading(); //makes sure that while intentionally spinning no correction is being made
-        else
-            r += counterspin();*/
-
-        //double originalMagnitude = Math.hypot(y, x); //how far the joystick is being pressed
-        //double correctedX = Math.cos(correctedAngle) * originalMagnitude; //break it back up to send to movebot
-        //double correctedY = Math.sin(correctedAngle) * originalMagnitude;
-
-        //double[] wheelSpeeds = moveBot(x, r, y, power); //to control from a robot perspective
-
+        double rotate = -gamepad1.right_stick_x;
 
         findRobotPosition();  // Call Vuforia routines, get robot position
 
-        // Insert operator gamepad actions here
-        if ((targetVisible) && (gamepad1.left_stick_button)) {
+        // Intake  Operator Actions
+        if (gamepad1.a || gamepad1.b || gamepad1.x){  // Operator wants to control the intake
+            if (gamepad1.a){    // A turns the intake on for bringing in rings
+                intakeMotor.setPower(1);
+            }
+            else if (gamepad1.b) {  // B reverses the intake
+                intakeMotor.setPower(-1);
+
+            } else if (gamepad1.x){    // X stops the intake
+                intakeMotor.setPower(0);
+            }
+        }
+
+        // Ring Shooter Operator Actions
+        if (gamepad1.right_bumper){
+            fireServo.setPosition(FIRE_SERVO);
+        } else{
+            fireServo.setPosition(STANDBY_SERVO);
+        }
+        if (gamepad1.left_trigger > 0.5){
+            ringShooterMotor.setPower(.75);
+        }else {
+            ringShooterMotor.setPower(0);
+        }
+        // Insert operator driving actions here
+        if ((targetVisible) && (gamepad1.y)) {
             //  Allow the operator to position the robot to shoot a ring if a target is visible
             alignRobotToShoot();
         }
@@ -346,14 +373,27 @@ public class VinceTeleopTesting extends OpMode
                 wheelSpeeds[i] /= maxMagnitude;
             }
         }
+
+        // Compare last wheel speeds to commanded wheel speeds and ramp as necessary
+
+        for (int i = 0; i < lastwheelSpeeds.length; i++){
+            // If the commanded speed value is more than SPEED_INCREMENT away from the last known wheel speed
+            if (Math.abs(wheelSpeeds[i] - lastwheelSpeeds[i]) > SPEED_INCREMENT){
+                // Set the current wheel speed to the last wheel speed plus speed increment in the signed directin of the difference
+                wheelSpeeds[i] = lastwheelSpeeds[i] + Math.copySign(SPEED_INCREMENT,wheelSpeeds[i] - lastwheelSpeeds[i]);
+            }
+        }
         // Send the normalized values to the wheels, further scaled by the user
 
-        // Send calculated power to wheels
         rightRearDrive.setPower(wheelSpeeds[0] * scaleFactor);
         rightFrontDrive.setPower(wheelSpeeds[1] * scaleFactor);
         leftRearDrive.setPower(wheelSpeeds[2] * scaleFactor);
         leftFrontDrive.setPower(wheelSpeeds[3] * scaleFactor);
 
+        // Save the last wheel speeds to assist in ramping
+        for (int i = 0; i < lastwheelSpeeds.length; i++){
+            lastwheelSpeeds[i] = wheelSpeeds[i];
+        }
     }
 
     public void initVuforiaNavigation() {
@@ -460,9 +500,9 @@ public class VinceTeleopTesting extends OpMode
 
         // Next, translate the camera lens to where it is on the robot.
         // In this example, it is centered (left to right), but forward of the middle of the robot, and above ground level.
-        final float CAMERA_FORWARD_DISPLACEMENT  = 4.0f * mmPerInch;   // eg: Camera is 4 Inches in front of robot center
-        final float CAMERA_VERTICAL_DISPLACEMENT = 8.0f * mmPerInch;   // eg: Camera is 8 Inches above ground
-        final float CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
+        final float CAMERA_FORWARD_DISPLACEMENT  = 7.0f * mmPerInch;   // eg: Camera is 7 Inches in front of robot center
+        final float CAMERA_VERTICAL_DISPLACEMENT = 6.0f * mmPerInch;   // eg: Camera is 6 Inches above ground
+        final float CAMERA_LEFT_DISPLACEMENT     = -4.0f * mmPerInch;     // eg: Camera is 4 inches to the RIGHT the robot's center line
 
         OpenGLMatrix robotFromCamera = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
@@ -485,8 +525,10 @@ public class VinceTeleopTesting extends OpMode
 
     // Aligns the robot with the goal and moves to an acceptable shooting range
     public void alignRobotToShoot(){
-        double rangeError = 3;
-        double angleError = 3;
+        double rangeError;
+        double angleError;
+        double rangePercent = .1; // Percent of range error to pass to moveBot
+        double anglePercent = .5; // Percent of angle error to pass to moveBot
 
         boolean rangeGood = false;
         boolean angleGood = false;
@@ -500,13 +542,14 @@ public class VinceTeleopTesting extends OpMode
             }
             if (Math.abs(relativeBearing) > angleCloseEnough){
                 // still not pointing the target
-                angleError = relativeBearing;  // Need to check sign here?
+                angleError = relativeBearing;
             }  else{
                 angleGood = true;
                 angleError = 0;
             }
+
             if (!rangeGood || !angleGood){
-                moveBot(rangeError, angleError, 0, 0.3);
+                moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.2);
             }
 
 
