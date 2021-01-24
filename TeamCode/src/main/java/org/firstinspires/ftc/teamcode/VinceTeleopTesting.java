@@ -36,9 +36,14 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorControllerEx;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.VinceHardwareBruinBot;
+import com.qualcomm.robotcore.hardware.PIDCoefficients;
+
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
@@ -86,8 +91,8 @@ public class VinceTeleopTesting extends OpMode
     public DcMotor rightFrontDrive = null;
     public DcMotor rightRearDrive = null;
 
-    public DcMotor ringShooterMotor = null;
-    public DcMotor wobbleMotor = null;
+    public DcMotorEx ringShooterMotor = null;
+    public DcMotorEx wobbleMotor = null;
     public DcMotor intakeMotor = null;
 
     public Servo fireServo = null;
@@ -112,11 +117,12 @@ public class VinceTeleopTesting extends OpMode
     public boolean              intakeRev = false;      // Track whether the intake is running in reverse
     public static double        STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
     public static double        FIRE_SERVO = 1;         // Position for the servo when firing a ring
-    public static double        WOBBLE_START = 100;     // Wobble Goal
-    public static double        WOBBLE_GRAB = 200;
-    public static double        WOBBLE_OVER_WALL = 120;
+    public static int           WOBBLE_GRAB = -120;     // Position for grabbing the wobble goal off the field
+    public static int           WOBBLE_OVER_WALL = -60; // Position for raising the wobble goal over the wall
+    public static int           WOBBLE_CARRY = -90;     // POsition for carrying the wobble goal to the wall
     public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
     public static double        SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
+    public static double        ringVel = 1500;            // Velocity of ring shooter (in ticks, max 1900)
 
     private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
@@ -156,11 +162,6 @@ public class VinceTeleopTesting extends OpMode
 
     public static List<Recognition> lastRecognitions = new ArrayList<Recognition>();
 
-
-    //variables to maintain a heading
-    public double previousHeading = 0;
-    public double deadband = toRadians(3);
-
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -197,6 +198,19 @@ public class VinceTeleopTesting extends OpMode
         }
         initVuforiaNavigation();
 
+        // Reset the wobble motor - Use a repeatable starting position
+        wobbleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        // Get PID constants for wobble motor
+        int motorIndex = ((robot.wobbleMotor).getPortNumber());
+        DcMotorControllerEx motorControllerEx = (DcMotorControllerEx)robot.wobbleMotor.getController();
+        PIDCoefficients pidModified = motorControllerEx.getPIDCoefficients(motorIndex, DcMotor.RunMode.RUN_TO_POSITION);
+
+        // change coefficients using methods included with DcMotorEx class.
+        PIDCoefficients pidNew = new PIDCoefficients(10, 2, 3);
+        motorControllerEx.setPIDCoefficients(motorIndex, DcMotor.RunMode.RUN_TO_POSITION, pidNew);
+
+        //wobbleMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION,pidNew);
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
     }
@@ -243,15 +257,47 @@ public class VinceTeleopTesting extends OpMode
         }
 
         // Ring Shooter Operator Actions
+        /*if (gamepad1.dpad_up || gamepad1.dpad_down){
+            if (gamepad1.dpad_up) {
+                if (ringVel <= 170000) {
+                    ringVel = ringVel + 10000;
+                }
+            } else if (gamepad1.dpad_down){
+                    if (ringVel >= 10000){
+                        ringVel = ringVel - 10000;
+                    } else{
+                        ringVel = 0;
+                    }
+                }
+            }
+        */
+
         if (gamepad1.right_bumper){
             fireServo.setPosition(FIRE_SERVO);
         } else{
             fireServo.setPosition(STANDBY_SERVO);
         }
         if (gamepad1.left_trigger > 0.5){
-            ringShooterMotor.setPower(.75);
+            ringShooterMotor.setVelocity(ringVel);
         }else {
             ringShooterMotor.setPower(0);
+        }
+
+        // Wobble Goal acions here
+        if (gamepad1.dpad_left || gamepad1.dpad_right || gamepad1.left_bumper){
+            if(gamepad1.dpad_left){
+                wobbleMotor.setTargetPosition(WOBBLE_GRAB);
+                wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                wobbleMotor.setPower(1);
+            } else if (gamepad1.dpad_right){
+                wobbleMotor.setTargetPosition(WOBBLE_CARRY);
+                wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                wobbleMotor.setPower(1);
+            } else if (gamepad1.left_bumper) {
+                wobbleMotor.setTargetPosition(WOBBLE_OVER_WALL);
+                wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                wobbleMotor.setPower(1);
+            }
         }
         // Insert operator driving actions here
         if ((targetVisible) && (gamepad1.y)) {
@@ -260,37 +306,13 @@ public class VinceTeleopTesting extends OpMode
         }
         else {
             moveBot(drive, rotate, strafe, power); //Basic Robot-centric Frame Driving
-
         }
+
+        // Telemetry Section
+        //telemetry.addData("Ring Velocity", ringVel);
+        //telemetry.addData("Actual Velocity", ringShooterMotor.getVelocity());
+        telemetry.addData("Wobble Goal Encoder", wobbleMotor.getCurrentPosition());
         telemetry.update();
-
-        //get all recognitions from object detection code and displays an ArrayList with all recognitions
-
-        //List<Recognition> recognitions = getRecognitions();
-        //if (recognitions != null)
-        //    lastRecognitions = recognitions;
-        //telemetry.addData("detectedRecognitions", lastRecognitions);
-
-        /*
-        // Show the elapsed game time and wheel power.
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("controllerX", "(%.2f)", gamepad1.left_stick_x);
-        telemetry.addData("controllerY", "(%.2f)", -gamepad1.left_stick_y);
-        telemetry.addData("rotation", "(%.2f)", r);
-        telemetry.addData("desiredAngle", "(%.2f)", toDegrees(Math.atan2(y, x)));
-        telemetry.addData("gyroAngle", "(%.2f)", toDegrees(getHeading()));
-        telemetry.addData("correctedAngled", "(%.2f)", toDegrees(correctedAngle));
-        telemetry.addData("Trying to correct", "(%.2f)", counterspin());
-        telemetry.addData("Error from last desired", "(%.2f)", toDegrees(getError(previousHeading)));
-
-        //telemetry.addData("originalMagnitude", "(%.2f)", toDegrees(originalMagnitude));
-
-
-        telemetry.addData("leftFront", "(%.2f)", leftFrontDrive.getPower());
-        telemetry.addData("rightFront", "(%.2f)", rightFrontDrive.getPower());
-        telemetry.addData("leftRear", "(%.2f)", rightRearDrive.getPower());
-        telemetry.addData("rightRear", "(%.2f)", leftRearDrive.getPower());
-        telemetry.update();*/
     }
 
     /*
@@ -312,20 +334,6 @@ public class VinceTeleopTesting extends OpMode
         }
     }
 
-    // when called figures out if it is out of the deadband and returns a double that is designed to spin the opposite of
-    public double counterspin() {
-        double error = getError(previousHeading); //so we don't have to keep calling this
-        if (Math.abs(error) > 5 * deadband) { //if the error is significantly larger than deadband correct more aggressively
-            return (error > 0) ? -1 : 1;
-        }
-        else if (Math.abs(error) >  2 * deadband) { //if the error is slightly larger than deadband be nice
-            return (error > 0) ? -0.5 : 0.5;
-        }
-        else if (Math.abs(error) >  deadband) { //if the error is slightly larger than deadband be nice
-            return (error > 0) ? -0.3 : 0.3;
-        }
-        return 0; //if within deadband chill
-    }
 
     //returns the current heading of the robot relative to the starting position
     public double getHeading() {
@@ -346,7 +354,6 @@ public class VinceTeleopTesting extends OpMode
         // Positive Rotation spins Left
         // Positive Strafe moves right
 
-        // How to normalize...Version 3
         //Put the raw wheel speeds into an array
         double wheelSpeeds[] = new double[4];
 
@@ -375,7 +382,6 @@ public class VinceTeleopTesting extends OpMode
         }
 
         // Compare last wheel speeds to commanded wheel speeds and ramp as necessary
-
         for (int i = 0; i < lastwheelSpeeds.length; i++){
             // If the commanded speed value is more than SPEED_INCREMENT away from the last known wheel speed
             if (Math.abs(wheelSpeeds[i] - lastwheelSpeeds[i]) > SPEED_INCREMENT){
@@ -383,8 +389,8 @@ public class VinceTeleopTesting extends OpMode
                 wheelSpeeds[i] = lastwheelSpeeds[i] + Math.copySign(SPEED_INCREMENT,wheelSpeeds[i] - lastwheelSpeeds[i]);
             }
         }
-        // Send the normalized values to the wheels, further scaled by the user
 
+        // Send the normalized values to the wheels, further scaled by the user
         rightRearDrive.setPower(wheelSpeeds[0] * scaleFactor);
         rightFrontDrive.setPower(wheelSpeeds[1] * scaleFactor);
         leftRearDrive.setPower(wheelSpeeds[2] * scaleFactor);
@@ -515,13 +521,6 @@ public class VinceTeleopTesting extends OpMode
         targetsUltimateGoal.activate();
     }
 
-    public double toDegrees(double radians) { //convert to degrees from radians
-        return radians / Math.PI * 180;
-    }
-
-    public double toRadians(double degrees) {
-        return degrees * Math.PI / 180;
-    }
 
     // Aligns the robot with the goal and moves to an acceptable shooting range
     public void alignRobotToShoot(){
@@ -551,10 +550,6 @@ public class VinceTeleopTesting extends OpMode
             if (!rangeGood || !angleGood){
                 moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.2);
             }
-
-
-
-
     }
 
     public void findRobotPosition(){
@@ -623,79 +618,4 @@ public class VinceTeleopTesting extends OpMode
             telemetry.addData("Visible Target", "none");
         }
     }
-    //used for object detection
-    /**
-     * Initialize the TensorFlow Object Detection engine.
-     *
-     private void initTfod() {
-     int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-     "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-     TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-     tfodParameters.minResultConfidence = 0.8f;
-     tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-     tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
-     }
-
-     private List<Recognition> getRecognitions() {
-     if (tfod != null) {
-     // getUpdatedRecognitions() will return null if no new information is available since
-     // the last time that call was made.
-     List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-     if (updatedRecognitions != null) {
-     return updatedRecognitions;
-
-     /*telemetry.addData("# Object Detected", updatedRecognitions.size());
-
-     // step through the list of recognitions and display boundary info.
-     int i = 0;
-     for (Recognition recognition : updatedRecognitions) {
-     telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-     telemetry.addData(String.format("label (%d)", i), recognition.estimateAngleToObject(AngleUnit.DEGREES));
-     telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-     recognition.getLeft(), recognition.getTop());
-     telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-     recognition.getRight(), recognition.getBottom());
-     }
-     telemetry.update();
-
-     *
-     }
-     }
-     return null;
-     }
-
-     private void stupidGetRecognitions() {
-     if (tfod != null) {
-     // getUpdatedRecognitions() will return null if no new information is available since
-     // the last time that call was made.
-     List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-     if (updatedRecognitions != null) {
-     telemetry.addData("# Object Detected", updatedRecognitions.size());
-
-     // step through the list of recognitions and display boundary info.
-     int i = 0;
-     for (Recognition recognition : updatedRecognitions) {
-     telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-     telemetry.addData(String.format("label (%d)", i), recognition.estimateAngleToObject(AngleUnit.DEGREES));
-     telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-     recognition.getLeft(), recognition.getTop());
-     telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-     recognition.getRight(), recognition.getBottom());
-     }
-     telemetry.update();
-     }
-     }
-     }
-
-     private List<Recognition> getSingles() {
-     List<Recognition> singles = new ArrayList();
-     List<Recognition> recognition = getRecognitions();
-     for (int i = 0; i < recognition.size(); i++) {
-     if (recognition.get(i).getLabel().equals("Single"));
-     singles.add(recognition.get(i));
-     }
-
-     return singles;
-     }
-     */
 }

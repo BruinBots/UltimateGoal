@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -50,8 +51,8 @@ public class VinceHardwareBruinBot {
 
     public BNO055IMU imu = null;
 
-    public DcMotor ringShooterMotor = null;
-    public DcMotor wobbleMotor = null;
+    public DcMotorEx ringShooterMotor = null;
+    public DcMotorEx wobbleMotor = null;
     public DcMotor intakeMotor = null;
 
     public Servo fireServo = null;
@@ -77,8 +78,8 @@ public class VinceHardwareBruinBot {
         rightFrontDrive = hwMap.get(DcMotor.class, "rightFrontDrive");
         rightRearDrive = hwMap.get(DcMotor.class, "rightRearDrive");
 
-        ringShooterMotor = hwMap.get(DcMotor.class, "ringShooterMotor");
-        wobbleMotor = hwMap.get(DcMotor.class, "wobbleMotor");
+        ringShooterMotor = hwMap.get(DcMotorEx.class, "ringShooterMotor");
+        wobbleMotor = hwMap.get(DcMotorEx.class, "wobbleMotor");
         intakeMotor = hwMap.get(DcMotor.class, "intakeMotor");
 
         //Initialize Servos
@@ -126,6 +127,7 @@ public class VinceHardwareBruinBot {
         // Set Ring Shooter so it doesn't stop too quickly
         ringShooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         ringShooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
 
         // Set drive motors to run without encoders.
         // May want to use RUN_USING_ENCODERS if encoders are installed.
