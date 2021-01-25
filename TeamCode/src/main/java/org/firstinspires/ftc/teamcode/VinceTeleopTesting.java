@@ -117,9 +117,9 @@ public class VinceTeleopTesting extends OpMode
     public boolean              intakeRev = false;      // Track whether the intake is running in reverse
     public static double        STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
     public static double        FIRE_SERVO = 1;         // Position for the servo when firing a ring
-    public static int           WOBBLE_GRAB = -120;     // Position for grabbing the wobble goal off the field
-    public static int           WOBBLE_OVER_WALL = -60; // Position for raising the wobble goal over the wall
-    public static int           WOBBLE_CARRY = -90;     // POsition for carrying the wobble goal to the wall
+    public static int           WOBBLE_GRAB = -840;     // Position for grabbing the wobble goal off the field
+    public static int           WOBBLE_OVER_WALL = -420; // Position for raising the wobble goal over the wall
+    public static int           WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
     public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
     public static double        SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
     public static double        ringVel = 1500;            // Velocity of ring shooter (in ticks, max 1900)
@@ -200,7 +200,7 @@ public class VinceTeleopTesting extends OpMode
 
         // Reset the wobble motor - Use a repeatable starting position
         wobbleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
+        /*
         // Get PID constants for wobble motor
         int motorIndex = ((robot.wobbleMotor).getPortNumber());
         DcMotorControllerEx motorControllerEx = (DcMotorControllerEx)robot.wobbleMotor.getController();
@@ -209,7 +209,7 @@ public class VinceTeleopTesting extends OpMode
         // change coefficients using methods included with DcMotorEx class.
         PIDCoefficients pidNew = new PIDCoefficients(10, 2, 3);
         motorControllerEx.setPIDCoefficients(motorIndex, DcMotor.RunMode.RUN_TO_POSITION, pidNew);
-
+        */
         //wobbleMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION,pidNew);
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
