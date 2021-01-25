@@ -82,7 +82,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 
 @TeleOp(name="Vince TeleOp Testing", group="Iterative Opmode")
 //@Disabled
-public class VinceTeleopTesting extends OpMode
+public class TylerTeleopTesting extends OpMode
 {
     // Declare OpMode members.
     public ElapsedTime runtime = new ElapsedTime();
@@ -166,8 +166,6 @@ public class VinceTeleopTesting extends OpMode
      */
     @Override
     public void init() {
-        telemetry.addData("Status", "Initialized");
-
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
@@ -240,6 +238,11 @@ public class VinceTeleopTesting extends OpMode
         double strafe = gamepad1.left_stick_x;
         double rotate = -gamepad1.right_stick_x;
 
+        double correctedAngle = Math.toDegrees(Math.atan2(drive, strafe)) + 90;
+        double inputMagnitude = Math.hypot(drive, strafe);
+        double correctedDrive = Math.sin(Math.toRadians(correctedAngle)) * inputMagnitude;
+        double correctedStrafe = Math.cos(Math.toRadians(correctedAngle)) * inputMagnitude;
+
         findRobotPosition();  // Call Vuforia routines, get robot position
 
         // Intake  Operator Actions
@@ -304,7 +307,7 @@ public class VinceTeleopTesting extends OpMode
             alignRobotToShoot();
         }
         else {
-            moveBot(drive, rotate, strafe, power); //Basic Robot-centric Frame Driving
+            moveBot(correctedDrive, rotate, correctedStrafe, power); //Basic Robot-centric Frame Driving
         }
 
         // Telemetry Section
@@ -531,24 +534,24 @@ public class VinceTeleopTesting extends OpMode
         boolean rangeGood = false;
         boolean angleGood = false;
 
-            if (Math.abs(targetRange - shotRange)> rangeCloseEnough){
-                // Still not in optimal shot position
-                rangeError = targetRange - shotRange;
-            } else {
-                rangeGood = true;
-                rangeError = 0;
-            }
-            if (Math.abs(relativeBearing) > angleCloseEnough){
-                // still not pointing the target
-                angleError = relativeBearing;
-            }  else{
-                angleGood = true;
-                angleError = 0;
-            }
+        if (Math.abs(targetRange - shotRange)> rangeCloseEnough){
+            // Still not in optimal shot position
+            rangeError = targetRange - shotRange;
+        } else {
+            rangeGood = true;
+            rangeError = 0;
+        }
+        if (Math.abs(relativeBearing) > angleCloseEnough){
+            // still not pointing the target
+            angleError = relativeBearing;
+        }  else{
+            angleGood = true;
+            angleError = 0;
+        }
 
-            if (!rangeGood || !angleGood){
-                moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.2);
-            }
+        if (!rangeGood || !angleGood){
+            moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.2);
+        }
     }
 
     public void findRobotPosition(){
