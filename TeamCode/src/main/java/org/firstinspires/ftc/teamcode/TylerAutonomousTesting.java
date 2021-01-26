@@ -42,7 +42,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 
-
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
@@ -245,7 +244,7 @@ public class TylerAutonomousTesting extends OpMode {
     public void loop() {
 
         if (runtime.time() < 5 && !found) {
-            Recognition detection = strongestRecognition(); //gets the recognition with the hightest confidence
+            Recognition detection = getStrongestRecognition(); //gets the recognition with the highest confidence
 
             if (detection != null) {
                 if (detection.getLabel().equals("Single")) {
@@ -312,21 +311,24 @@ public class TylerAutonomousTesting extends OpMode {
         }
     }
 
-    private void moveTo(double x, double y) {
+    private void moveTo(double x, double y) { //given a displacement, in inches from the center of field using the
         //lastLocation
     }
 
-    private Recognition strongestRecognition() {
+    private Recognition getStrongestRecognition() {
         updateRecognitions();
 
-        if (lastRecognitions == null)
+        if (lastRecognitions == null || lastRecognitions.size() == 0) //dont panic, will short circuit if the first condition is true
             return null;
 
         Recognition hightestConfidence = lastRecognitions.get(0);
-        for (int i = 0; i < lastRecognitions.size(); i++) {
-            if (hightestConfidence.getConfidence() < lastRecognitions.get(i).getConfidence())
-                hightestConfidence = lastRecognitions.get(i);
-        }
+
+        //for (int i = 0; i < lastRecognitions.size(); i++) {
+        //    if (hightestConfidence.getConfidence() < lastRecognitions.get(i).getConfidence())
+        //        hightestConfidence = lastRecognitions.get(i);
+        //}
+
+        //above is not necessary as the call to AnnotatedYuvRgbFrame.getRecognitions returns a sorted list of recognitions by confidence
 
         return hightestConfidence;
     }
@@ -520,7 +522,7 @@ public class TylerAutonomousTesting extends OpMode {
         //Put the raw wheel speeds into an array
         double wheelSpeeds[] = new double[4];
 
-        wheelSpeeds[0] = drive - rotate - strafe; // Right Read
+        wheelSpeeds[0] = drive - rotate - strafe; // Right Rear
         wheelSpeeds[1] = drive - rotate + strafe; // Right Front
         wheelSpeeds[2] = drive + rotate + strafe; // Left Rear
         wheelSpeeds[3] = drive + rotate - strafe; // Left Front
