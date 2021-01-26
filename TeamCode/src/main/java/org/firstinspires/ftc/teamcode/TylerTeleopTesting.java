@@ -82,7 +82,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 
 @TeleOp(name="Vince TeleOp Testing", group="Iterative Opmode")
 //@Disabled
-public class VinceTeleopTesting extends OpMode
+public class TylerTeleopTesting extends OpMode
 {
     // Declare OpMode members.
     public ElapsedTime runtime = new ElapsedTime();
@@ -117,8 +117,8 @@ public class VinceTeleopTesting extends OpMode
     public boolean              intakeRev = false;      // Track whether the intake is running in reverse
     public static double        STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
     public static double        FIRE_SERVO = 1;         // Position for the servo when firing a ring
-    public static int           WOBBLE_GRAB = -900;     // Position for grabbing the wobble goal off the field
-    public static int           WOBBLE_OVER_WALL = -550; // Position for raising the wobble goal over the wall
+    public static int           WOBBLE_GRAB = -840;     // Position for grabbing the wobble goal off the field
+    public static int           WOBBLE_OVER_WALL = -420; // Position for raising the wobble goal over the wall
     public static int           WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
     public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
     public static double        SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
@@ -166,8 +166,6 @@ public class VinceTeleopTesting extends OpMode
      */
     @Override
     public void init() {
-        telemetry.addData("Status", "Initialized");
-
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
@@ -240,6 +238,11 @@ public class VinceTeleopTesting extends OpMode
         double strafe = gamepad1.left_stick_x;
         double rotate = -gamepad1.right_stick_x;
 
+        double correctedAngle = Math.toDegrees(Math.atan2(drive, strafe)) + 90;
+        double inputMagnitude = Math.hypot(drive, strafe);
+        double correctedDrive = Math.sin(Math.toRadians(correctedAngle)) * inputMagnitude;
+        double correctedStrafe = Math.cos(Math.toRadians(correctedAngle)) * inputMagnitude;
+
         findRobotPosition();  // Call Vuforia routines, get robot position
 
         // Intake  Operator Actions
@@ -287,15 +290,15 @@ public class VinceTeleopTesting extends OpMode
             if(gamepad1.dpad_left){
                 wobbleMotor.setTargetPosition(WOBBLE_GRAB);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                wobbleMotor.setPower(.4);
+                wobbleMotor.setPower(1);
             } else if (gamepad1.dpad_right){
                 wobbleMotor.setTargetPosition(WOBBLE_CARRY);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                wobbleMotor.setPower(.4);
+                wobbleMotor.setPower(1);
             } else if (gamepad1.left_bumper) {
                 wobbleMotor.setTargetPosition(WOBBLE_OVER_WALL);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                wobbleMotor.setPower(.4);
+                wobbleMotor.setPower(1);
             }
         }
         // Insert operator driving actions here
@@ -304,7 +307,7 @@ public class VinceTeleopTesting extends OpMode
             alignRobotToShoot();
         }
         else {
-            moveBot(drive, rotate, strafe, power); //Basic Robot-centric Frame Driving
+            moveBot(correctedDrive, rotate, correctedStrafe, power); //Basic Robot-centric Frame Driving
         }
 
         // Telemetry Section
@@ -531,24 +534,24 @@ public class VinceTeleopTesting extends OpMode
         boolean rangeGood = false;
         boolean angleGood = false;
 
-            if (Math.abs(targetRange - shotRange)> rangeCloseEnough){
-                // Still not in optimal shot position
-                rangeError = targetRange - shotRange;
-            } else {
-                rangeGood = true;
-                rangeError = 0;
-            }
-            if (Math.abs(relativeBearing) > angleCloseEnough){
-                // still not pointing the target
-                angleError = relativeBearing;
-            }  else{
-                angleGood = true;
-                angleError = 0;
-            }
+        if (Math.abs(targetRange - shotRange)> rangeCloseEnough){
+            // Still not in optimal shot position
+            rangeError = targetRange - shotRange;
+        } else {
+            rangeGood = true;
+            rangeError = 0;
+        }
+        if (Math.abs(relativeBearing) > angleCloseEnough){
+            // still not pointing the target
+            angleError = relativeBearing;
+        }  else{
+            angleGood = true;
+            angleError = 0;
+        }
 
-            if (!rangeGood || !angleGood){
-                moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.2);
-            }
+        if (!rangeGood || !angleGood){
+            moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.2);
+        }
     }
 
     public void findRobotPosition(){
