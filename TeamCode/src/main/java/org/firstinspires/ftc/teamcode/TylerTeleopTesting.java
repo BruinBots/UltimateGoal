@@ -80,7 +80,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Vince TeleOp Testing", group="Iterative Opmode")
+@TeleOp(name="Tyler TeleOp Testing", group="Iterative Opmode")
 //@Disabled
 public class TylerTeleopTesting extends OpMode
 {

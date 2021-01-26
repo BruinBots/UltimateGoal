@@ -33,8 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -75,7 +75,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name = "Vince TeleOp Testing", group = "Iterative Opmode")
+@Autonomous(name = "Tyler Autonomous Testing", group = "Iterative Opmode")
 //@Disabled
 public class TylerAutonomousTesting extends OpMode {
     // Declare OpMode members.
