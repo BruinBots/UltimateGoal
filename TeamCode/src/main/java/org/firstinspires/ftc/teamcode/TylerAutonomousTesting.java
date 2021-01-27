@@ -267,7 +267,7 @@ public class TylerAutonomousTesting extends OpMode {
                 findRobotPosition();
 
                 if (!firedFirst3) {
-                    if (!targetVisible) {//drive forward until we find target
+                    if (!targetVisible && !alignedToShoot) {//drive forward until we find target
                         moveBot(1, 0, 0, 0.3);
                     } else if (!alignedToShoot) { //get into position to shoot
                         alignRobotToShoot();
@@ -283,6 +283,9 @@ public class TylerAutonomousTesting extends OpMode {
             }
         }
 
+
+        telemetry.addData("targetVisible", targetVisible);
+        telemetry.addData("last location", lastLocation);
         telemetry.addData("LastRecognitions", lastRecognitions);
         telemetry.addData("FiredFirst3Rings", firedFirst3);
         telemetry.addData("WobbleGoalDroppedOff", wobbleGoalDroppedOff);
@@ -311,7 +314,7 @@ public class TylerAutonomousTesting extends OpMode {
         }
     }
 
-    private void moveTo(double x, double y) { //given a displacement, in inches from the center of field using the
+    private void moveTo(double x, double y) { //given a displacement, in inches from the center of field using the location
         //lastLocation
     }
 
@@ -712,6 +715,7 @@ public class TylerAutonomousTesting extends OpMode {
             moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.2);
         } else {
             alignedToShoot = true;
+            moveBot(0,0,0,0);
         }
     }
 
@@ -757,7 +761,7 @@ public class TylerAutonomousTesting extends OpMode {
             robotY = translation.get(1) / mmPerInch;
 
             // Robot bearing (in +vc CCW cartesian system) is defined by the standard Matrix z rotation
-            robotBearing = rotation.thirdAngle;
+            robotBearing = rotation.thirdAngle - 90; //magic number :)
 
             // target range is based on distance from robot position to the visible target
             // Pythagorean Theorum

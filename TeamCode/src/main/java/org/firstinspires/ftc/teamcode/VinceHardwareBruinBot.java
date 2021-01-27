@@ -56,6 +56,7 @@ public class VinceHardwareBruinBot {
     public DcMotor intakeMotor = null;
 
     public Servo fireServo = null;
+    public Servo clawServo = null;
 
 
 
@@ -84,6 +85,7 @@ public class VinceHardwareBruinBot {
 
         //Initialize Servos
         fireServo = hwMap.get(Servo.class, "fireServo");
+        clawServo = hwMap.get(Servo.class, "clawServo");
 
         // REV IMU Setup
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();

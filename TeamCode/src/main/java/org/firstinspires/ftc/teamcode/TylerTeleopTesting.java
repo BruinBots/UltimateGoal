@@ -96,6 +96,7 @@ public class TylerTeleopTesting extends OpMode
     public DcMotor intakeMotor = null;
 
     public Servo fireServo = null;
+    public Servo clawServo = null;
 
     public BNO055IMU imu = null;
 
@@ -115,10 +116,12 @@ public class TylerTeleopTesting extends OpMode
     public boolean              shooterOn = false;      // Track whether the ring shooter is on
     public boolean              intakeFwd = false;       // Track whether the intake is running in the forward direction
     public boolean              intakeRev = false;      // Track whether the intake is running in reverse
-    public static double        STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
+    public static double        FIRE_STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
     public static double        FIRE_SERVO = 1;         // Position for the servo when firing a ring
-    public static int           WOBBLE_GRAB = -840;     // Position for grabbing the wobble goal off the field
-    public static int           WOBBLE_OVER_WALL = -420; // Position for raising the wobble goal over the wall
+    public final double         CLAW_STANDBY_SERVO = 0;
+    public final double         CLAW_GRAB = 1;
+    public static int           WOBBLE_GRAB = -900;     // Position for grabbing the wobble goal off the field
+    public static int           WOBBLE_OVER_WALL = -450; // Position for raising the wobble goal over the wall
     public static int           WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
     public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
     public static double        SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
@@ -189,6 +192,8 @@ public class TylerTeleopTesting extends OpMode
             ringShooterMotor = robot.ringShooterMotor;
 
             fireServo = robot.fireServo;
+            clawServo = robot.clawServo;
+
 
             //init imu
             imu = robot.imu;
@@ -224,7 +229,8 @@ public class TylerTeleopTesting extends OpMode
      */
     @Override
     public void start() {
-        fireServo.setPosition(STANDBY_SERVO);
+        fireServo.setPosition(FIRE_STANDBY_SERVO);
+        clawServo.setPosition(CLAW_STANDBY_SERVO);
         runtime.reset();
     }
 
@@ -277,7 +283,7 @@ public class TylerTeleopTesting extends OpMode
         if (gamepad1.right_bumper){
             fireServo.setPosition(FIRE_SERVO);
         } else{
-            fireServo.setPosition(STANDBY_SERVO);
+            fireServo.setPosition(FIRE_STANDBY_SERVO);
         }
         if (gamepad1.left_trigger > 0.5){
             ringShooterMotor.setVelocity(ringVel);
@@ -286,20 +292,25 @@ public class TylerTeleopTesting extends OpMode
         }
 
         // Wobble Goal acions here
-        if (gamepad1.dpad_left || gamepad1.dpad_right || gamepad1.left_bumper){
+        if (gamepad1.dpad_left || gamepad1.dpad_right || gamepad1.left_bumper || gamepad1.left_stick_button || gamepad1.right_stick_button){
             if(gamepad1.dpad_left){
                 wobbleMotor.setTargetPosition(WOBBLE_GRAB);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                wobbleMotor.setPower(1);
+                wobbleMotor.setPower(.4);
             } else if (gamepad1.dpad_right){
                 wobbleMotor.setTargetPosition(WOBBLE_CARRY);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                wobbleMotor.setPower(1);
+                wobbleMotor.setPower(.4);
             } else if (gamepad1.left_bumper) {
                 wobbleMotor.setTargetPosition(WOBBLE_OVER_WALL);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                wobbleMotor.setPower(1);
+                wobbleMotor.setPower(.4);
             }
+            else if (gamepad1.left_stick_button) {
+                clawServo.setPosition(CLAW_GRAB);
+            }
+            else if (gamepad1.right_stick_button)
+                clawServo.setPosition(CLAW_STANDBY_SERVO);
         }
         // Insert operator driving actions here
         if ((targetVisible) && (gamepad1.y)) {
