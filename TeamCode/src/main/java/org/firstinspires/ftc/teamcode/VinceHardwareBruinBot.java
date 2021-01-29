@@ -44,10 +44,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 //the place where all the variables are defined
 public class VinceHardwareBruinBot {
     /* Public OpMode members. */
-    public DcMotor leftFrontDrive = null;
-    public DcMotor leftRearDrive = null;
-    public DcMotor rightFrontDrive = null;
-    public DcMotor rightRearDrive = null;
+    public DcMotorEx leftFrontDrive = null;
+    public DcMotorEx leftRearDrive = null;
+    public DcMotorEx rightFrontDrive = null;
+    public DcMotorEx rightRearDrive = null;
 
     public BNO055IMU imu = null;
 
@@ -74,10 +74,10 @@ public class VinceHardwareBruinBot {
         hwMap = ahwMap;
 
         // Define and Initialize Motors
-        leftFrontDrive = hwMap.get(DcMotor.class, "leftFrontDrive");
-        leftRearDrive = hwMap.get(DcMotor.class, "leftRearDrive");
-        rightFrontDrive = hwMap.get(DcMotor.class, "rightFrontDrive");
-        rightRearDrive = hwMap.get(DcMotor.class, "rightRearDrive");
+        leftFrontDrive = hwMap.get(DcMotorEx.class, "leftFrontDrive");
+        leftRearDrive = hwMap.get(DcMotorEx.class, "leftRearDrive");
+        rightFrontDrive = hwMap.get(DcMotorEx.class, "rightFrontDrive");
+        rightRearDrive = hwMap.get(DcMotorEx.class, "rightRearDrive");
 
         ringShooterMotor = hwMap.get(DcMotorEx.class, "ringShooterMotor");
         wobbleMotor = hwMap.get(DcMotorEx.class, "wobbleMotor");
