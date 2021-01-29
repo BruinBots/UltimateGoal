@@ -266,20 +266,31 @@ public class TylerAutonomousTesting extends OpMode {
             } else {
                 findRobotPosition();
 
+                if (!targetVisible)
+                    moveBot(1, 0, 0, .5);
+                else
+                    moveTo(0, 0);
+
+                /*
                 if (!firedFirst3) {
                     if (!targetVisible && !alignedToShoot) {//drive forward until we find target
                         moveBot(1, 0, 0, 0.3);
                     } else if (!alignedToShoot) { //get into position to shoot
                         alignRobotToShoot();
-                    } else if (shotsFired < 3 && ringShooterMotor.getVelocity() > ringVel - 50) { //shoot three times while waiting for motor to get back up to speed
+                    } else if (alignedToShoot && ringShooterMotor.getPower() == 0 && shooterOn == false) {
+                        ringShooterMotor.setVelocity(ringVel);
+                        shooterOn = true;
+                    } else if (shotsFired < 3 && ringShooterMotor.getVelocity() > ringVel - 500) { //shoot three times while waiting for motor to get back up to speed
                         //shoot ring
                         shotsFired++;
                     } else if (shotsFired == 3)
                         firedFirst3 = true;
+                    ringShooterMotor.setPower(0);
 
                 } else if (!wobbleGoalDroppedOff && targetVisible) { //pray we have kept track of the target in front of us
                     //IMPLEMENT
-                }
+                    moveTo(0, 0);
+                }*/
             }
         }
 
@@ -290,6 +301,7 @@ public class TylerAutonomousTesting extends OpMode {
         telemetry.addData("FiredFirst3Rings", firedFirst3);
         telemetry.addData("WobbleGoalDroppedOff", wobbleGoalDroppedOff);
         telemetry.addData("WobbleBox", wobbleBox);
+        telemetry.addData("motorVel", ringShooterMotor.getVelocity());
 
 
         telemetry.update();
@@ -315,7 +327,38 @@ public class TylerAutonomousTesting extends OpMode {
     }
 
     private void moveTo(double x, double y) { //given a displacement, in inches from the center of field using the location
-        //lastLocation
+        double angleError;
+        double anglePercent = -0.5;
+
+        double xError = x - robotX;
+        double yError = y - robotY;
+
+        double fieldCentricAngle = Math.toDegrees(Math.atan2(yError, xError)) + 90; //corrects to put 0 deg at blue alliance sidelines
+        double robotCentricAngle = fieldCentricAngle - (robotBearing);//adding 180 because 0 degrees for field coords
+
+        if (Math.abs(relativeBearing) > angleCloseEnough) { //
+            // still not pointing the target
+            angleError = robotBearing;
+        } else {
+            angleError = 0;
+        }
+
+        double robotCentricX = Math.sin(Math.toRadians(robotCentricAngle));
+        double robotCentricY = Math.cos(Math.toRadians(robotCentricAngle));
+
+        moveBot(0, angleError * anglePercent, 0, 0.3);
+
+        telemetry.addData("x", x);
+        telemetry.addData("y", y);
+        telemetry.addData("Robotx", robotX);
+        telemetry.addData("Roboty", robotY);
+        //telemetry.addData("angleError", angleError);
+        telemetry.addData("robotCentricAngle", robotCentricAngle);
+        telemetry.addData("fieldCentricAngle", fieldCentricAngle);
+
+
+        Math.toRadians(robotCentricAngle);
+
     }
 
     private Recognition getStrongestRecognition() {
@@ -324,16 +367,16 @@ public class TylerAutonomousTesting extends OpMode {
         if (lastRecognitions == null || lastRecognitions.size() == 0) //dont panic, will short circuit if the first condition is true
             return null;
 
-        Recognition hightestConfidence = lastRecognitions.get(0);
+        Recognition highestConfidence = lastRecognitions.get(0);
 
         //for (int i = 0; i < lastRecognitions.size(); i++) {
-        //    if (hightestConfidence.getConfidence() < lastRecognitions.get(i).getConfidence())
-        //        hightestConfidence = lastRecognitions.get(i);
+        //    if (highestConfidence.getConfidence() < lastRecognitions.get(i).getConfidence())
+        //        highestConfidence = lastRecognitions.get(i);
         //}
 
         //above is not necessary as the call to AnnotatedYuvRgbFrame.getRecognitions returns a sorted list of recognitions by confidence
 
-        return hightestConfidence;
+        return highestConfidence;
     }
 
     private void updateRecognitions() {
@@ -715,7 +758,7 @@ public class TylerAutonomousTesting extends OpMode {
             moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.2);
         } else {
             alignedToShoot = true;
-            moveBot(0,0,0,0);
+            moveBot(0, 0, 0, 0);
         }
     }
 

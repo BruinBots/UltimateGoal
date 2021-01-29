@@ -112,7 +112,7 @@ public class TylerTeleopTesting extends OpMode
     public static double        angleCloseEnough = 2;   // Deadband around angle (deg)
     public static double        rangeCloseEnough = 2;   // Deadband around range (in)
     public static double        shotRange = 80;         // Optimum shot distance behind the shot line (in)
-    public double               power = 0.7;            //used to control max drive power
+    public double               power = 0.8;            //used to control max drive power
     public boolean              shooterOn = false;      // Track whether the ring shooter is on
     public boolean              intakeFwd = false;       // Track whether the intake is running in the forward direction
     public boolean              intakeRev = false;      // Track whether the intake is running in reverse
@@ -287,6 +287,7 @@ public class TylerTeleopTesting extends OpMode
         }
         if (gamepad1.left_trigger > 0.5){
             ringShooterMotor.setVelocity(ringVel);
+            telemetry.addData("shooterVelocity", ringShooterMotor.getVelocity());
         }else {
             ringShooterMotor.setPower(0);
         }
@@ -318,7 +319,7 @@ public class TylerTeleopTesting extends OpMode
             alignRobotToShoot();
         }
         else {
-            moveBot(correctedDrive, rotate, correctedStrafe, power); //Basic Robot-centric Frame Driving
+            moveBot(drive, rotate, strafe, power); //Basic Robot-centric Frame Driving
         }
 
         // Telemetry Section
