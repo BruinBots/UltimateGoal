@@ -328,7 +328,8 @@ public class TylerAutonomousTesting extends OpMode {
 
     private void moveTo(double x, double y) { //given a displacement, in inches from the center of field using the location
         double angleError;
-        double anglePercent = -0.5;
+        double anglePercent = 0.1;
+        double deadband = 4;
 
         double xError = x - robotX;
         double yError = y - robotY;
@@ -336,9 +337,9 @@ public class TylerAutonomousTesting extends OpMode {
         double fieldCentricAngle = Math.toDegrees(Math.atan2(yError, xError)) + 90; //corrects to put 0 deg at blue alliance sidelines
         double robotCentricAngle = fieldCentricAngle - (robotBearing);//adding 180 because 0 degrees for field coords
 
-        if (Math.abs(relativeBearing) > angleCloseEnough) { //
+        if (Math.abs(robotBearing) > deadband) { //
             // still not pointing the target
-            angleError = robotBearing;
+            angleError = -robotBearing;
         } else {
             angleError = 0;
         }
