@@ -40,8 +40,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
@@ -105,7 +103,7 @@ public class TylerAutonomousTesting extends OpMode {
     public double visTgtY = 0;            // Visible Target Y component in field centric coordinates
     public static double angleCloseEnough = 2;   // Deadband around angle (deg)
     public static double rangeCloseEnough = 2;   // Deadband around range (in)
-    public static double shotRange = 80;         // Optimum shot distance behind the shot line (in)
+    //public static double shotRange = 80;         // Optimum shot distance behind the shot line (in)
     public double power = 0.7;            //used to control max drive power
     public boolean shooterOn = false;      // Track whether the ring shooter is on
     public boolean intakeFwd = false;       // Track whether the intake is running in the forward direction
@@ -117,7 +115,7 @@ public class TylerAutonomousTesting extends OpMode {
     public static int WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
     public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
     public static double SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
-    public static double ringVel = 1600;          // Velocity of ring shooter (in ticks, max 1900)
+    public static double ringVel = 1500;          // Velocity of ring shooter (in ticks, max 1900)
 
     private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
@@ -242,6 +240,10 @@ public class TylerAutonomousTesting extends OpMode {
     private boolean alignedToShoot = false;
     private int shotsFired = 0;
 
+    private double startedShooting;
+    private double retractInterval = 1.5;
+    private double extendInterval = 1;
+
     @Override
     public void loop() {
 
@@ -276,24 +278,49 @@ public class TylerAutonomousTesting extends OpMode {
 
                 if (!firedFirst3) {
                     if (!targetVisible && !alignedToShoot) {//drive forward until we find target
-                        moveBot(1, 0, 0, 0.3);
+                        moveBot(1, 0, 0, 0.2);
                     } else if (!alignedToShoot) { //get into position to shoot
-                        alignRobotToShoot();
+                        alignRobotToShoot(80);
                     } else if (alignedToShoot && ringShooterMotor.getPower() == 0 && shooterOn == false) {
                         ringShooterMotor.setVelocity(ringVel);
                         shooterOn = true;
+                        startedShooting = runtime.time();
                     } else if (shotsFired < 3 && ringShooterMotor.getVelocity() > ringVel - 500) { //shoot three times while waiting for motor to get back up to speed
                         //shoot ring
-                        fireServo.setPosition(FIRE_SERVO);
-                        shotsFired++;
+                        //if (Math.abs(fireServo.getPosition() - STANDBY_SERVO) < 0.03) {
+                        /*if (servoDelay > 0.5 && servoShooting) {
+                            fireServo.setPosition(FIRE_SERVO);
+                            servoDelay = runtime.time() - servoDelay - startedShooting;
+                            servoShooting = !servoShooting;
+                            //} else if (Math.abs(fireServo.getPosition() - FIRE_SERVO) < 0.03) {
+                        } else if (servoDelay > 0.5 && !servoShooting) {
+                            fireServo.setPosition(STANDBY_SERVO);
+                            servoDelay = runtime.time() - servoDelay - startedShooting;
+                            servoShooting = !servoShooting;
+                            shotsFired++;
+                        }
+                        */
+
+                        if (runtime.time() - startedShooting > retractInterval) {
+                            fireServo.setPosition(STANDBY_SERVO);
+                            retractInterval += 1;
+                            shotsFired++;
+                        }
+                        else if (runtime.time() - startedShooting > extendInterval) {
+                            fireServo.setPosition(FIRE_SERVO);
+                            extendInterval += 1;
+                        }
+
                     } else if (shotsFired == 3) {
-                    firedFirst3 = true;
-                    ringShooterMotor.setPower(0);
-                }
+                        firedFirst3 = true;
+                        ringShooterMotor.setPower(0);
+                    }
 
                 } else if (!wobbleGoalDroppedOff && targetVisible) { //pray we have kept track of the target in front of us
                     //IMPLEMENT
-                    moveTo(0, 0);
+                    //moveTo(-24, -24);
+ //                   shotRange = 64;
+                    alignRobotToShoot(64);
                 }
             }
         }
@@ -437,7 +464,7 @@ public class TylerAutonomousTesting extends OpMode {
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
         //parameters.cameraDirection   = CAMERA_CHOICE;
         parameters.useExtendedTracking = false;
-        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+        //parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
 
         // Make sure extended tracking is disabled for this example.
@@ -531,9 +558,9 @@ public class TylerAutonomousTesting extends OpMode {
 
         // Next, translate the camera lens to where it is on the robot.
         // In this example, it is centered (left to right), but forward of the middle of the robot, and above ground level.
-        final float CAMERA_FORWARD_DISPLACEMENT = 4.0f * mmPerInch;   // eg: Camera is 4 Inches in front of robot center
-        final float CAMERA_VERTICAL_DISPLACEMENT = 8.0f * mmPerInch;   // eg: Camera is 8 Inches above ground
-        final float CAMERA_LEFT_DISPLACEMENT = 0;     // eg: Camera is ON the robot's center line
+        final float CAMERA_FORWARD_DISPLACEMENT = 8.0f * mmPerInch;   // eg: Camera is 4 Inches in front of robot center
+        final float CAMERA_VERTICAL_DISPLACEMENT = 6.0f * mmPerInch;   // eg: Camera is 8 Inches above ground
+        final float CAMERA_LEFT_DISPLACEMENT = -7.0f * mmPerInch;     // eg: Camera is ON the robot's center line
 
         OpenGLMatrix robotFromCamera = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
@@ -557,7 +584,7 @@ public class TylerAutonomousTesting extends OpMode {
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
         //parameters.cameraDirection = CameraDirection.BACK;
-        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+        //parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
 
         //  Instantiate the Vuforia engine
@@ -747,7 +774,7 @@ public class TylerAutonomousTesting extends OpMode {
 
 
     // Aligns the robot with the goal and moves to an acceptable shooting range
-    public void alignRobotToShoot() {
+    public void alignRobotToShoot(double shotRange) {
         double rangeError;
         double angleError;
         double rangePercent = .1; // Percent of range error to pass to moveBot
@@ -836,7 +863,7 @@ public class TylerAutonomousTesting extends OpMode {
 
             // Target relative bearing is the target Heading relative to the direction the robot is pointing.
             // This can be used as an error signal to have the robot point the target
-            relativeBearing = targetBearing - robotBearing;
+            relativeBearing = targetBearing - robotBearing - 90;
             // Display the current visible target name, robot info, target info, and required robot action.
 
             telemetry.addData("Robot", "[X]:[Y] (Heading) [%5.0fin]:[%5.0fin] (%4.0f°)",
