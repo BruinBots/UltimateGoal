@@ -98,6 +98,8 @@ public class TylerAutonomousTesting extends OpMode {
     public double robotBearing = 0;       // Robot's rotation around the Z axis (CCW is positive) in Field Centric Coordinates (deg)
     public double targetRange = 0;        // Range from robot's center to target (in)
     public double targetBearing = 0;      // Heading of the target , relative to the robot's unrotated center (deg)
+    private ArrayList<Double> pastHeadings = new ArrayList<Double>();
+    private int maxSizeOfPastHeadings = 3;
     public double relativeBearing = 0;    // Heading to the target from the robot's current bearing. (deg)
     public double visTgtX = 0;            // Visible Target X component in field centric coordinates
     public double visTgtY = 0;            // Visible Target Y component in field centric coordinates
@@ -115,7 +117,7 @@ public class TylerAutonomousTesting extends OpMode {
     public static int WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
     public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
     public static double SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
-    public static double ringVel = 1500;          // Velocity of ring shooter (in ticks, max 1900)
+    public static double ringVel = 1600;          // Velocity of ring shooter (in ticks, max 1900)
 
     private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
@@ -266,12 +268,12 @@ public class TylerAutonomousTesting extends OpMode {
             } else {
                 findRobotPosition();
 
-                if (!targetVisible)
-                    moveBot(1, 0, 0, .5);
+                /*if (!targetVisible)
+                    moveBot(1, 0, 0, .7);
                 else
-                    moveTo(0, 0);
+                    moveTo(0, 36);*/
 
-                /*
+
                 if (!firedFirst3) {
                     if (!targetVisible && !alignedToShoot) {//drive forward until we find target
                         moveBot(1, 0, 0, 0.3);
@@ -282,15 +284,17 @@ public class TylerAutonomousTesting extends OpMode {
                         shooterOn = true;
                     } else if (shotsFired < 3 && ringShooterMotor.getVelocity() > ringVel - 500) { //shoot three times while waiting for motor to get back up to speed
                         //shoot ring
+                        fireServo.setPosition(FIRE_SERVO);
                         shotsFired++;
-                    } else if (shotsFired == 3)
-                        firedFirst3 = true;
+                    } else if (shotsFired == 3) {
+                    firedFirst3 = true;
                     ringShooterMotor.setPower(0);
+                }
 
                 } else if (!wobbleGoalDroppedOff && targetVisible) { //pray we have kept track of the target in front of us
                     //IMPLEMENT
                     moveTo(0, 0);
-                }*/
+                }
             }
         }
 
@@ -298,6 +302,7 @@ public class TylerAutonomousTesting extends OpMode {
         telemetry.addData("targetVisible", targetVisible);
         telemetry.addData("last location", lastLocation);
         telemetry.addData("LastRecognitions", lastRecognitions);
+        telemetry.addData("pastHeadings", pastHeadings);
         telemetry.addData("FiredFirst3Rings", firedFirst3);
         telemetry.addData("WobbleGoalDroppedOff", wobbleGoalDroppedOff);
         telemetry.addData("WobbleBox", wobbleBox);
@@ -326,10 +331,20 @@ public class TylerAutonomousTesting extends OpMode {
         }
     }
 
+    private double averagePastHeadings(ArrayList<Double> list) {
+        double sum = 0;
+
+        for (int i = 0; i < list.size(); i++) {
+            sum += list.get(i);
+        }
+
+        return sum;
+    }
+
     private void moveTo(double x, double y) { //given a displacement, in inches from the center of field using the location
         double angleError;
         double anglePercent = 0.1;
-        double deadband = 4;
+        double deadband = 7;
 
         double xError = x - robotX;
         double yError = y - robotY;
@@ -337,17 +352,19 @@ public class TylerAutonomousTesting extends OpMode {
         double fieldCentricAngle = Math.toDegrees(Math.atan2(yError, xError)) + 90; //corrects to put 0 deg at blue alliance sidelines
         double robotCentricAngle = fieldCentricAngle - (robotBearing);//adding 180 because 0 degrees for field coords
 
-        if (Math.abs(robotBearing) > deadband) { //
+        double averageHeading = averagePastHeadings(pastHeadings);
+
+        if (Math.abs(averageHeading) > deadband) { //
             // still not pointing the target
-            angleError = -robotBearing;
+            angleError = -averageHeading;
         } else {
             angleError = 0;
         }
 
-        double robotCentricX = Math.sin(Math.toRadians(robotCentricAngle));
-        double robotCentricY = Math.cos(Math.toRadians(robotCentricAngle));
+        double robotCentricX = (xError > 4) ? Math.sin(Math.toRadians(robotCentricAngle)) : 0;
+        double robotCentricY = (yError > 4) ? -Math.cos(Math.toRadians(robotCentricAngle)) : 0;
 
-        moveBot(0, angleError * anglePercent, 0, 0.3);
+        moveBot(robotCentricX, angleError * anglePercent, robotCentricY, 0.3);
 
         telemetry.addData("x", x);
         telemetry.addData("y", y);
@@ -546,7 +563,6 @@ public class TylerAutonomousTesting extends OpMode {
         //  Instantiate the Vuforia engine
         vuforia = new ClosableVuforiaLocalizer(parameters);
     }
-
 
     //returns the current heading of the robot relative to the starting position
     public double getHeading() {
@@ -806,6 +822,9 @@ public class TylerAutonomousTesting extends OpMode {
 
             // Robot bearing (in +vc CCW cartesian system) is defined by the standard Matrix z rotation
             robotBearing = rotation.thirdAngle - 90; //magic number :)
+            pastHeadings.add(robotBearing);
+            if (pastHeadings.size() > maxSizeOfPastHeadings)
+                pastHeadings.remove(0);
 
             // target range is based on distance from robot position to the visible target
             // Pythagorean Theorum
