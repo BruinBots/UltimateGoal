@@ -310,6 +310,7 @@ public class VinceTeleopTesting extends OpMode
         // Telemetry Section
         //telemetry.addData("Ring Velocity", ringVel);
         //telemetry.addData("Actual Velocity", ringShooterMotor.getVelocity());
+        telemetry.addData("Ring Motor Encoder", ringShooterMotor.getCurrentPosition());
         telemetry.addData("Wobble Goal Encoder", wobbleMotor.getCurrentPosition());
         telemetry.update();
     }
