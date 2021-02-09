@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -79,7 +80,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Use Android Studios to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
-
+@Config
 @TeleOp(name="Vince TeleOp Testing", group="Iterative Opmode")
 //@Disabled
 public class VinceTeleopTesting extends OpMode
@@ -122,7 +123,7 @@ public class VinceTeleopTesting extends OpMode
     public static int           WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
     public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
     public static double        SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
-    public static double        ringVel = 1500;            // Velocity of ring shooter (in ticks, max 1900)
+    public static double        ringVel = 1200;            // Velocity of ring shooter (in ticks, max 1900)
 
     private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
@@ -310,7 +311,7 @@ public class VinceTeleopTesting extends OpMode
         // Telemetry Section
         //telemetry.addData("Ring Velocity", ringVel);
         //telemetry.addData("Actual Velocity", ringShooterMotor.getVelocity());
-        telemetry.addData("Ring Motor Encoder", ringShooterMotor.getCurrentPosition());
+        telemetry.addData("Ring Motor Encoder", ringShooterMotor.getVelocity());
         telemetry.addData("Wobble Goal Encoder", wobbleMotor.getCurrentPosition());
         telemetry.update();
     }
