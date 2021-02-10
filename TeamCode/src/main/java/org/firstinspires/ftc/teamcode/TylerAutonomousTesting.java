@@ -247,7 +247,7 @@ public class TylerAutonomousTesting extends OpMode {
     @Override
     public void loop() {
 
-        if (runtime.time() < 5 && !found) {
+        if (runtime.time() < 10 && !found) {
             Recognition detection = getStrongestRecognition(); //gets the recognition with the highest confidence
 
             if (detection != null) {
@@ -278,7 +278,7 @@ public class TylerAutonomousTesting extends OpMode {
 
                 if (!firedFirst3) {
                     if (!targetVisible && !alignedToShoot) {//drive forward until we find target
-                        moveBot(1, 0, 0, 0.2);
+                        moveBot(1, 0, 0, 0.3);
                     } else if (!alignedToShoot) { //get into position to shoot
                         alignRobotToShoot(80);
                     } else if (alignedToShoot && ringShooterMotor.getPower() == 0 && shooterOn == false) {

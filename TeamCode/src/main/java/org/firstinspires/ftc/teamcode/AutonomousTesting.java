@@ -195,7 +195,7 @@ public class AutonomousTesting extends OpMode
         telemetry.addData("wobbleGoalBox", box);
 
 
-        if (runtime.time() < 5 && !found) {
+        if (runtime.time() < 10 && !found) {
             //get all recognitions from object detection code and displays an ArrayList with all recognitions
             List<Recognition> recognitions = getRingRecognitions();
             telemetry.addData("detectedRecognitions", recognitions);
