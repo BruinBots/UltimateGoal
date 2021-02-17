@@ -38,8 +38,8 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
 
     /* Lines 37-38 in StandardTrackingWheelLocalizer.java */
     // Got 87 in for a 100in drag
-    public static double X_MULTIPLIER = 1.149; // Multiplier in the X direction
-    public static double Y_MULTIPLIER = 1.149; // Multiplier in the Y direction
+    public static double X_MULTIPLIER = 1.015; // Multiplier in the X direction
+    public static double Y_MULTIPLIER = 1.015; // Multiplier in the Y direction
 
     public StandardTrackingWheelLocalizer(HardwareMap hardwareMap) {
         super(Arrays.asList(

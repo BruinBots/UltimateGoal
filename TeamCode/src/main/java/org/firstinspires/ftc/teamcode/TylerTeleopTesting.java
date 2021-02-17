@@ -41,7 +41,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.teamcode.VinceHardwareBruinBot;
+
 import com.qualcomm.robotcore.hardware.PIDCoefficients;
 
 
@@ -72,18 +74,17 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * The names of OpModes appear on the menu of the FTC Driver Station.
  * When an selection is made from the menu, the corresponding OpMode
  * class is instantiated on the Robot Controller and executed.
- *
+ * <p>
  * This particular OpMode just executes a basic Tank Drive Teleop for a two wheeled robot
  * It includes all the skeletal structure that all iterative OpModes contain.
- *
+ * <p>
  * Use Android Studios to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Tyler TeleOp Testing", group="Iterative Opmode")
+@TeleOp(name = "Tyler TeleOp Testing", group = "Iterative Opmode")
 //@Disabled
-public class TylerTeleopTesting extends OpMode
-{
+public class TylerTeleopTesting extends OpMode {
     // Declare OpMode members.
     public ElapsedTime runtime = new ElapsedTime();
     public DcMotor leftFrontDrive = null;
@@ -101,37 +102,37 @@ public class TylerTeleopTesting extends OpMode
     public BNO055IMU imu = null;
 
     // Variables used to determine robot position on the field and range/bearing to target
-    public double               robotX = 0;             // X position in Field Centric Coordinates (in)
-    public double               robotY = 0;             // Y position in Field Centric Coordinates (in)
-    public double               robotBearing = 0;       // Robot's rotation around the Z axis (CCW is positive) in Field Centric Coordinates (deg)
-    public double               targetRange = 0;        // Range from robot's center to target (in)
-    public double               targetBearing = 0;      // Heading of the target , relative to the robot's unrotated center (deg)
-    public double               relativeBearing = 0;    // Heading to the target from the robot's current bearing. (deg)
-    public double               visTgtX = 0;            // Visible Target X component in field centric coordinates
-    public double               visTgtY = 0;            // Visible Target Y component in field centric coordinates
-    public static double        angleCloseEnough = 2;   // Deadband around angle (deg)
-    public static double        rangeCloseEnough = 2;   // Deadband around range (in)
-    public static double        shotRange = 80;         // Optimum shot distance behind the shot line (in)
-    public double               power = 0.8;            //used to control max drive power
-    public boolean              shooterOn = false;      // Track whether the ring shooter is on
-    public boolean              intakeFwd = false;       // Track whether the intake is running in the forward direction
-    public boolean              intakeRev = false;      // Track whether the intake is running in reverse
-    public static double        FIRE_STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
-    public static double        FIRE_SERVO = 1;         // Position for the servo when firing a ring
-    public final double         CLAW_STANDBY_SERVO = 0;
-    public final double         CLAW_GRAB = 1;
-    public static int           WOBBLE_GRAB = -900;     // Position for grabbing the wobble goal off the field
-    public static int           WOBBLE_OVER_WALL = -450; // Position for raising the wobble goal over the wall
-    public static int           WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
+    public double robotX = 0;             // X position in Field Centric Coordinates (in)
+    public double robotY = 0;             // Y position in Field Centric Coordinates (in)
+    public double robotBearing = 0;       // Robot's rotation around the Z axis (CCW is positive) in Field Centric Coordinates (deg)
+    public double targetRange = 0;        // Range from robot's center to target (in)
+    public double targetBearing = 0;      // Heading of the target , relative to the robot's unrotated center (deg)
+    public double relativeBearing = 0;    // Heading to the target from the robot's current bearing. (deg)
+    public double visTgtX = 0;            // Visible Target X component in field centric coordinates
+    public double visTgtY = 0;            // Visible Target Y component in field centric coordinates
+    public static double angleCloseEnough = 2;   // Deadband around angle (deg)
+    public static double rangeCloseEnough = 2;   // Deadband around range (in)
+    public static double shotRange = 80;         // Optimum shot distance behind the shot line (in)
+    public double power = 0.8;            //used to control max drive power
+    public boolean shooterOn = false;      // Track whether the ring shooter is on
+    public boolean intakeFwd = false;       // Track whether the intake is running in the forward direction
+    public boolean intakeRev = false;      // Track whether the intake is running in reverse
+    public static double FIRE_STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
+    public static double FIRE_SERVO = 1;         // Position for the servo when firing a ring
+    public final double CLAW_STANDBY_SERVO = 0;
+    public final double CLAW_GRAB = 1;
+    public static int WOBBLE_GRAB = -900;     // Position for grabbing the wobble goal off the field
+    public static int WOBBLE_OVER_WALL = -450; // Position for raising the wobble goal over the wall
+    public static int WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
     public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
-    public static double        SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
-    public static double        ringVel = 1500;            // Velocity of ring shooter (in ticks, max 1900)
+    public static double SPEED_INCREMENT = 0.09;  // Increment that wheel speed will be increased/decreased
+    public static double ringVel = 1500;            // Velocity of ring shooter (in ticks, max 1900)
 
     private static final String VUFORIA_KEY = "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
-    private static final float mmPerInch        = 25.4f;
-    private static final float mmTargetHeight   = (6) * mmPerInch;
+    private static final float mmPerInch = 25.4f;
+    private static final float mmTargetHeight = (6) * mmPerInch;
     // the height of the center of the target image above the floor
 
     VuforiaTrackables targetsUltimateGoal = null;
@@ -139,18 +140,18 @@ public class TylerTeleopTesting extends OpMode
 
     // Constants for perimeter targets
     private static final float halfField = 72 * mmPerInch;
-    private static final float quadField  = 36 * mmPerInch;
+    private static final float quadField = 36 * mmPerInch;
 
     private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
-    private static final boolean PHONE_IS_PORTRAIT = false  ;
+    private static final boolean PHONE_IS_PORTRAIT = false;
 
     // Class Members
     private OpenGLMatrix lastLocation = null;
     private VuforiaLocalizer vuforia = null;
     private boolean targetVisible = false;
-    private float phoneXRotate    = 0;
-    private float phoneYRotate    = 0;
-    private float phoneZRotate    = 0;
+    private float phoneXRotate = 0;
+    private float phoneYRotate = 0;
+    private float phoneZRotate = 0;
 
     //variables for object detection, not navigation
 
@@ -175,7 +176,7 @@ public class TylerTeleopTesting extends OpMode
 
         VinceHardwareBruinBot robot = new VinceHardwareBruinBot();
         // Inititalize last wheel speed
-        for (int i = 0; i < lastwheelSpeeds.length; i++){
+        for (int i = 0; i < lastwheelSpeeds.length; i++) {
             lastwheelSpeeds[i] = 0;
         }
         robot.init(hardwareMap);
@@ -240,7 +241,7 @@ public class TylerTeleopTesting extends OpMode
     @Override
     public void loop() {
 
-        double drive  = gamepad1.left_stick_y;
+        double drive = gamepad1.left_stick_y;
         double strafe = gamepad1.left_stick_x;
         double rotate = -gamepad1.right_stick_x;
 
@@ -252,14 +253,13 @@ public class TylerTeleopTesting extends OpMode
         findRobotPosition();  // Call Vuforia routines, get robot position
 
         // Intake  Operator Actions
-        if (gamepad1.a || gamepad1.b || gamepad1.x){  // Operator wants to control the intake
-            if (gamepad1.a){    // A turns the intake on for bringing in rings
+        if (gamepad1.a || gamepad1.b || gamepad1.x) {  // Operator wants to control the intake
+            if (gamepad1.a) {    // A turns the intake on for bringing in rings
                 intakeMotor.setPower(1);
-            }
-            else if (gamepad1.b) {  // B reverses the intake
+            } else if (gamepad1.b) {  // B reverses the intake
                 intakeMotor.setPower(-1);
 
-            } else if (gamepad1.x){    // X stops the intake
+            } else if (gamepad1.x) {    // X stops the intake
                 intakeMotor.setPower(0);
             }
         }
@@ -280,45 +280,44 @@ public class TylerTeleopTesting extends OpMode
             }
         */
 
-        if (gamepad1.right_bumper){
+        if (gamepad1.right_bumper) {
             fireServo.setPosition(FIRE_SERVO);
-        } else{
+        } else {
             fireServo.setPosition(FIRE_STANDBY_SERVO);
         }
-        if (gamepad1.left_trigger > 0.5){
-            ringShooterMotor.setVelocity(ringVel);
+        if (gamepad1.left_trigger > 0.5) {
+            ringShooterMotor.setVelocity(1200);
             telemetry.addData("shooterVelocity", ringShooterMotor.getVelocity());
-        }else {
+        } else if (gamepad1.right_trigger > 0.5) {
+            ringShooterMotor.setVelocity(1150);
+            telemetry.addData("shooterVelocity", ringShooterMotor.getVelocity());
+        } else
             ringShooterMotor.setPower(0);
-        }
 
         // Wobble Goal acions here
-        if (gamepad1.dpad_left || gamepad1.dpad_right || gamepad1.left_bumper || gamepad1.left_stick_button || gamepad1.right_stick_button){
-            if(gamepad1.dpad_left){
+        if (gamepad1.dpad_left || gamepad1.dpad_right || gamepad1.dpad_left || gamepad1.left_stick_button || gamepad1.right_stick_button) {
+            if (gamepad1.dpad_left) {
                 wobbleMotor.setTargetPosition(WOBBLE_GRAB);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 wobbleMotor.setPower(.4);
-            } else if (gamepad1.dpad_right){
+            } else if (gamepad1.dpad_right) {
                 wobbleMotor.setTargetPosition(WOBBLE_CARRY);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 wobbleMotor.setPower(.4);
-            } else if (gamepad1.left_bumper) {
+            } else if (gamepad1.dpad_left) {
                 wobbleMotor.setTargetPosition(WOBBLE_OVER_WALL);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 wobbleMotor.setPower(.4);
-            }
-            else if (gamepad1.left_stick_button) {
+            } else if (gamepad1.left_stick_button) {
                 clawServo.setPosition(CLAW_GRAB);
-            }
-            else if (gamepad1.right_stick_button)
+            } else if (gamepad1.right_stick_button)
                 clawServo.setPosition(CLAW_STANDBY_SERVO);
         }
         // Insert operator driving actions here
         if ((targetVisible) && (gamepad1.y)) {
             //  Allow the operator to position the robot to shoot a ring if a target is visible
             alignRobotToShoot();
-        }
-        else {
+        } else {
             moveBot(drive, rotate, strafe, power); //Basic Robot-centric Frame Driving
         }
 
@@ -359,8 +358,7 @@ public class TylerTeleopTesting extends OpMode
         return desiredHeading - getHeading();
     }
 
-    public void moveBot(double drive, double rotate, double strafe, double scaleFactor)
-    {
+    public void moveBot(double drive, double rotate, double strafe, double scaleFactor) {
         // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
 //        robot.rightFrontDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -378,29 +376,25 @@ public class TylerTeleopTesting extends OpMode
         // Find the magnitude of the first element in the array
         double maxMagnitude = Math.abs(wheelSpeeds[0]);
         // If any of the other wheel speeds are bigger, save that value in maxMagnitude
-        for (int i = 1; i < wheelSpeeds.length; i++)
-        {
+        for (int i = 1; i < wheelSpeeds.length; i++) {
             double magnitude = Math.abs(wheelSpeeds[i]);
-            if (magnitude > maxMagnitude)
-            {
+            if (magnitude > maxMagnitude) {
                 maxMagnitude = magnitude;
             }
         }
         // Normalize all of the magnitudes to below 1
-        if (maxMagnitude > 1.0)
-        {
-            for (int i = 0; i < wheelSpeeds.length; i++)
-            {
+        if (maxMagnitude > 1.0) {
+            for (int i = 0; i < wheelSpeeds.length; i++) {
                 wheelSpeeds[i] /= maxMagnitude;
             }
         }
 
         // Compare last wheel speeds to commanded wheel speeds and ramp as necessary
-        for (int i = 0; i < lastwheelSpeeds.length; i++){
+        for (int i = 0; i < lastwheelSpeeds.length; i++) {
             // If the commanded speed value is more than SPEED_INCREMENT away from the last known wheel speed
-            if (Math.abs(wheelSpeeds[i] - lastwheelSpeeds[i]) > SPEED_INCREMENT){
+            if (Math.abs(wheelSpeeds[i] - lastwheelSpeeds[i]) > SPEED_INCREMENT) {
                 // Set the current wheel speed to the last wheel speed plus speed increment in the signed directin of the difference
-                wheelSpeeds[i] = lastwheelSpeeds[i] + Math.copySign(SPEED_INCREMENT,wheelSpeeds[i] - lastwheelSpeeds[i]);
+                wheelSpeeds[i] = lastwheelSpeeds[i] + Math.copySign(SPEED_INCREMENT, wheelSpeeds[i] - lastwheelSpeeds[i]);
             }
         }
 
@@ -411,7 +405,7 @@ public class TylerTeleopTesting extends OpMode
         leftFrontDrive.setPower(wheelSpeeds[3] * scaleFactor);
 
         // Save the last wheel speeds to assist in ramping
-        for (int i = 0; i < lastwheelSpeeds.length; i++){
+        for (int i = 0; i < lastwheelSpeeds.length; i++) {
             lastwheelSpeeds[i] = wheelSpeeds[i];
         }
     }
@@ -428,7 +422,7 @@ public class TylerTeleopTesting extends OpMode
         // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        parameters.cameraDirection   = CAMERA_CHOICE;
+        parameters.cameraDirection = CAMERA_CHOICE;
 
         // Make sure extended tracking is disabled for this example.
         parameters.useExtendedTracking = false;
@@ -482,12 +476,12 @@ public class TylerTeleopTesting extends OpMode
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0)));
         frontWallTarget.setLocation(OpenGLMatrix
                 .translation(-halfField, 0, mmTargetHeight)
-                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0 , 90)));
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 90)));
 
         // The tower goal targets are located a quarter field length from the ends of the back perimeter wall.
         blueTowerGoalTarget.setLocation(OpenGLMatrix
                 .translation(halfField, quadField, mmTargetHeight)
-                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0 , -90)));
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
         redTowerGoalTarget.setLocation(OpenGLMatrix
                 .translation(halfField, -quadField, mmTargetHeight)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
@@ -515,14 +509,14 @@ public class TylerTeleopTesting extends OpMode
 
         // Rotate the phone vertical about the X axis if it's in portrait mode
         if (PHONE_IS_PORTRAIT) {
-            phoneXRotate = 90 ;
+            phoneXRotate = 90;
         }
 
         // Next, translate the camera lens to where it is on the robot.
         // In this example, it is centered (left to right), but forward of the middle of the robot, and above ground level.
-        final float CAMERA_FORWARD_DISPLACEMENT  = 7.0f * mmPerInch;   // eg: Camera is 7 Inches in front of robot center
+        final float CAMERA_FORWARD_DISPLACEMENT = 7.0f * mmPerInch;   // eg: Camera is 7 Inches in front of robot center
         final float CAMERA_VERTICAL_DISPLACEMENT = 6.0f * mmPerInch;   // eg: Camera is 6 Inches above ground
-        final float CAMERA_LEFT_DISPLACEMENT     = -4.0f * mmPerInch;     // eg: Camera is 4 inches to the RIGHT the robot's center line
+        final float CAMERA_LEFT_DISPLACEMENT = -4.0f * mmPerInch;     // eg: Camera is 4 inches to the RIGHT the robot's center line
 
         OpenGLMatrix robotFromCamera = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
@@ -537,7 +531,7 @@ public class TylerTeleopTesting extends OpMode
 
 
     // Aligns the robot with the goal and moves to an acceptable shooting range
-    public void alignRobotToShoot(){
+    public void alignRobotToShoot() {
         double rangeError;
         double angleError;
         double rangePercent = .1; // Percent of range error to pass to moveBot
@@ -546,31 +540,31 @@ public class TylerTeleopTesting extends OpMode
         boolean rangeGood = false;
         boolean angleGood = false;
 
-        if (Math.abs(targetRange - shotRange)> rangeCloseEnough){
+        if (Math.abs(targetRange - shotRange) > rangeCloseEnough) {
             // Still not in optimal shot position
             rangeError = targetRange - shotRange;
         } else {
             rangeGood = true;
             rangeError = 0;
         }
-        if (Math.abs(relativeBearing) > angleCloseEnough){
+        if (Math.abs(relativeBearing) > angleCloseEnough) {
             // still not pointing the target
             angleError = relativeBearing;
-        }  else{
+        } else {
             angleGood = true;
             angleError = 0;
         }
 
-        if (!rangeGood || !angleGood){
-            moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.2);
+        if (!rangeGood || !angleGood) {
+            moveBot(rangePercent * rangeError, anglePercent * angleError, 0, 0.3);
         }
     }
 
-    public void findRobotPosition(){
+    public void findRobotPosition() {
         // check all the trackable targets to see which one (if any) is visible.
         targetVisible = false;
         for (VuforiaTrackable trackable : allTrackables) {
-            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
+            if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
                 telemetry.addData("Visible Target", trackable.getName());
                 targetVisible = true;
 
@@ -584,7 +578,7 @@ public class TylerTeleopTesting extends OpMode
 
                 // getUpdatedRobotLocation() will return null if no new information is available since
                 // the last time that call was made, or if the trackable is not currently visible.
-                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
+                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
                 if (robotLocationTransform != null) {
                     lastLocation = robotLocationTransform;
                 }
@@ -604,8 +598,8 @@ public class TylerTeleopTesting extends OpMode
             //telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
 
             // Robot position is defined by the standard Matrix translation (x and y)
-            robotX = translation.get(0)/ mmPerInch;
-            robotY = translation.get(1)/ mmPerInch;
+            robotX = translation.get(0) / mmPerInch;
+            robotY = translation.get(1) / mmPerInch;
 
             // Robot bearing (in +vc CCW cartesian system) is defined by the standard Matrix z rotation
             robotBearing = rotation.thirdAngle;
@@ -616,7 +610,7 @@ public class TylerTeleopTesting extends OpMode
 
             // target bearing is based on angle formed between the X axis to the target range line
             // Always use "Head minus Tail" when working with vectors
-            targetBearing = Math.toDegrees(Math.atan((visTgtY - robotY)/(visTgtX - robotX)));
+            targetBearing = Math.toDegrees(Math.atan((visTgtY - robotY) / (visTgtX - robotX)));
 
             // Target relative bearing is the target Heading relative to the direction the robot is pointing.
             // This can be used as an error signal to have the robot point the target
@@ -627,8 +621,7 @@ public class TylerTeleopTesting extends OpMode
                     robotX, robotY, robotBearing);
             telemetry.addData("Target", "[TgtRange] (TgtBearing):(RelB) [%5.0fin] (%4.0f°):(%4.0f°)",
                     targetRange, targetBearing, relativeBearing);
-        }
-        else {
+        } else {
             telemetry.addData("Visible Target", "none");
         }
     }
