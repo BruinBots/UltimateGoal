@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -41,36 +42,24 @@ import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
 import java.util.List;
 
-/**
- * This 2020-2021 OpMode illustrates the basics of using the TensorFlow Object Detection API to
- * determine the position of the Ultimate Goal game elements.
- *
- * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list.
- *
- * IMPORTANT: In order to use this OpMode, you need to obtain your own Vuforia license key as
- * is explained below.
- */
+
 @Config
 @TeleOp(name = "TylerAutonomous", group = "Autonomous")
 //@Disabled
 public class TylerAutonomous extends LinearOpMode {
+    private ElapsedTime runtime = new ElapsedTime();
+
     private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
     private static final String LABEL_FIRST_ELEMENT = "Quad";
     private static final String LABEL_SECOND_ELEMENT = "Single";
+
     private static final String VUFORIA_KEY =
             "AakkMZL/////AAABmRnl+IbXpU2Bupd2XoDxqmMDav7ioe6D9XSVSpTJy8wS6zCFvTvshk61FxOC8Izf/oEiU7pcan8AoDiUwuGi64oSeKzABuAw+IWx70moCz3hERrENGktt86FUbDzwkHGHYvc/WgfG3FFXUjHi41573XUKj7yXyyalUSoEbUda9bBO1YD6Veli1A4tdkXXCir/ZmwPD9oA4ukFRD351RBbAVRZWU6Mg/YTfRSycyqXDR+M2F/S8Urb93pRa5QjI4iM5oTu2cbvei4Z6K972IxZyiysbIigL/qjmZHouF9fRO4jHoJYzqVpCVYbBVKvVwn3yZRTAHf9Wf77/JG5hJvjzzRGoQ3OHMt/Ch93QbnJ7zN";
 
-    /**
-     * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
-     * localization engine.
-     */
+    //Vuforia Localizer which will produce frames for TFOD
     private VuforiaLocalizer vuforia;
 
-    /**
-     * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
-     * Detection engine.
-     */
+    //TFOD engine
     private TFObjectDetector tfod;
 
     @Override
@@ -101,58 +90,31 @@ public class TylerAutonomous extends LinearOpMode {
         /** Wait for the game to begin */
         telemetry.addData(">", "Press Play to start op mode");
         telemetry.update();
-
-        boolean started = false; //allows us to know if the start button has ever been pressed so we know when to stop searching for recognitions
-        String highestConfidenceRecognition = "None";
-        double highestConfidence = 0;
-
-        while (!opModeIsActive() && !started) {
-            if (tfod != null) {
-                // getUpdatedRecognitions() will return null if no new information is available since
-                // the last time that call was made.
-                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-                if (updatedRecognitions != null) {
-                    telemetry.addData("# Object Detected", updatedRecognitions.size());
-                    // step through the list of recognitions and display boundary info.
-                    int i = 0;
-                    System.out.println(updatedRecognitions);
-                    for (Recognition recognition : updatedRecognitions) {
-                        if (recognition.getConfidence() > highestConfidence) {
-                            highestConfidence = recognition.getConfidence();
-                            highestConfidenceRecognition = recognition.getLabel();
-
-                            telemetry.addLine("finalRecognition" + highestConfidenceRecognition + " with " + highestConfidence + " confidence");
-                        }
-                    }
-                    telemetry.update();
-                }
-            }
-        }
-
         waitForStart();
 
+        //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        runtime.reset();
+
+        double highestConfidence = 0;
+        String highestConfidenceLabel = "None";
+
         if (opModeIsActive()) {
-            /*while (opModeIsActive()) {
+            while (opModeIsActive() && runtime.time() < 5) {
                 if (tfod != null) {
                     // getUpdatedRecognitions() will return null if no new information is available since
                     // the last time that call was made.
                     List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
                     if (updatedRecognitions != null) {
-                      telemetry.addData("# Object Detected", updatedRecognitions.size());
-                      // step through the list of recognitions and display boundary info.
-                      int i = 0;
-                      System.out.println(updatedRecognitions);
-                      for (Recognition recognition : updatedRecognitions) {
-                        telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                        telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-                                recognition.getLeft(), recognition.getTop());
-                        telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-                                recognition.getRight(), recognition.getBottom());
-                      }
-                      telemetry.update();
+                        System.out.println(updatedRecognitions);
+                        for (Recognition recognition : updatedRecognitions) {
+                            if (recognition.getConfidence() > highestConfidence) {
+                                highestConfidence = recognition.getConfidence();
+                                highestConfidenceLabel = recognition.getLabel();
+                            }
+                        }
                     }
                 }
-            }*/
+            }
         }
 
         if (tfod != null) {
