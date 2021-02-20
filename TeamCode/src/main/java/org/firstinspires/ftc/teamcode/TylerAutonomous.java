@@ -55,7 +55,7 @@ import java.util.List;
 public class TylerAutonomous extends LinearOpMode {
     public double timeScanning = 5; //time spent trying to find the highest confidence recognition
     public double distanceToMoveForwardToShoot = 72;
-    public Pose2d startingPose = new Pose2d(-49.25, 9, 0);
+    public Pose2d startingPose = new Pose2d(-63, 49.25, 0); //starting outside Blue Alliance
 
     //Motor and Servo constants
     public double FIRE_STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
@@ -129,6 +129,9 @@ public class TylerAutonomous extends LinearOpMode {
         waitForStart();
 
         //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        fireServo.setPosition(FIRE_STANDBY_SERVO);
+        clawServo.setPosition(CLAW_STANDBY_SERVO);
+
         runtime.reset();
 
         double highestConfidence = 0;
@@ -164,10 +167,23 @@ public class TylerAutonomous extends LinearOpMode {
                 telemetry.addData("finalHeading", poseEstimate.getHeading());
                 telemetry.update();
 
+                double turnToShoot = Math.atan2(36 - poseEstimate.getX(), 36 - poseEstimate.getY());
+
+                drive.turn(turnToShoot);
+
+                ringShooterMotor.setVelocity(HIGH_GOAL_VEL);
+
+                sleep(2000);
+
                 //start shooting rings
                 for (int i = 0; i < 3; i++) {
-
+                    fireServo.setPosition(FIRE_SERVO);
+                    sleep(500);
+                    fireServo.setPosition(FIRE_STANDBY_SERVO);
+                    sleep(500);
                 }
+
+                drive.turn(-turnToShoot);
             }
         }
 
