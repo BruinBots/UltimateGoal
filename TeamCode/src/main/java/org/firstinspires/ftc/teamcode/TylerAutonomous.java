@@ -183,6 +183,8 @@ public class TylerAutonomous extends LinearOpMode {
                     sleep(500);
                 }
 
+                ringShooterMotor.setPower(0);
+
                 drive.turn(-turnToShoot);
             }
         }
