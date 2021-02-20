@@ -55,7 +55,7 @@ import java.util.List;
 public class TylerAutonomous extends LinearOpMode {
     public double timeScanning = 5; //time spent trying to find the highest confidence recognition
     public double distanceToMoveForwardToShoot = 72;
-    public Pose2d startingPose = new Pose2d(-63, 49.25, 0); //starting outside Blue Alliance
+    public Pose2d startingPose = new Pose2d(-63, 25.75, 0); //starting outside Blue Alliance
 
     //Motor and Servo constants
     public double FIRE_STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
@@ -95,6 +95,7 @@ public class TylerAutonomous extends LinearOpMode {
     public void runOpMode() {
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        drive.setPoseEstimate(startingPose);
 
         VinceHardwareBruinBot robot = new VinceHardwareBruinBot();
         robot.init(hardwareMap);
@@ -155,11 +156,11 @@ public class TylerAutonomous extends LinearOpMode {
                 }
             }
             if (runtime.time() >= timeScanning) {
-                Trajectory trajectory = drive.trajectoryBuilder(startingPose)
+                Trajectory driveForward = drive.trajectoryBuilder(startingPose)
                         .forward(distanceToMoveForwardToShoot)
                         .build();
 
-                drive.followTrajectory(trajectory);
+                drive.followTrajectory(driveForward);
 
                 Pose2d poseEstimate = drive.getPoseEstimate();
                 telemetry.addData("finalX", poseEstimate.getX());
