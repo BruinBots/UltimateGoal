@@ -168,7 +168,7 @@ public class TylerAutonomous extends LinearOpMode {
                 telemetry.addData("finalHeading", poseEstimate.getHeading());
                 telemetry.update();
 
-                double turnToShoot = Math.atan2(36 - poseEstimate.getX(), 36 - poseEstimate.getY());
+                double turnToShoot = Math.atan2(72 - poseEstimate.getX(), 36 - poseEstimate.getY());
 
                 drive.turn(turnToShoot);
 
