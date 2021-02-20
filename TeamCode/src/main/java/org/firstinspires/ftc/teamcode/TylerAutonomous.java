@@ -35,6 +35,8 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -55,6 +57,17 @@ public class TylerAutonomous extends LinearOpMode {
     public double distanceToMoveForwardToShoot = 72;
     public Pose2d startingPose = new Pose2d(-49.25, 9, 0);
 
+    //Motor and Servo constants
+    public double FIRE_STANDBY_SERVO = 0.77;   // Position for the servo to be in when not firing
+    public double FIRE_SERVO = 1;         // Position for the servo when firing a ring
+    public double CLAW_STANDBY_SERVO = 0;
+    public double CLAW_GRAB = 1;
+    public int WOBBLE_GRAB = -900;     // Position for grabbing the wobble goal off the field
+    public int WOBBLE_OVER_WALL = -450; // Position for raising the wobble goal over the wall
+    public int WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
+    public int HIGH_GOAL_VEL = 1200;
+    public int MID_GOAL_VEL = 1150;
+
     private ElapsedTime runtime = new ElapsedTime();
 
     private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
@@ -70,11 +83,32 @@ public class TylerAutonomous extends LinearOpMode {
     //TFOD engine
     private TFObjectDetector tfod;
 
+    public DcMotorEx ringShooterMotor = null;
+    public DcMotorEx wobbleMotor = null;
+    public DcMotor intakeMotor = null;
+
+    public Servo fireServo = null;
+    public Servo clawServo = null;
+
+
     @Override
     public void runOpMode() {
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
-
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        VinceHardwareBruinBot robot = new VinceHardwareBruinBot();
+        robot.init(hardwareMap);
+        {
+            intakeMotor = robot.intakeMotor;
+            wobbleMotor = robot.wobbleMotor;
+            ringShooterMotor = robot.ringShooterMotor;
+
+            fireServo = robot.fireServo;
+            clawServo = robot.clawServo;
+        }
+
+        // Reset the wobble motor - Use a repeatable starting position
+        wobbleMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
@@ -129,6 +163,11 @@ public class TylerAutonomous extends LinearOpMode {
                 telemetry.addData("finalY", poseEstimate.getY());
                 telemetry.addData("finalHeading", poseEstimate.getHeading());
                 telemetry.update();
+
+                //start shooting rings
+                for (int i = 0; i < 3; i++) {
+
+                }
             }
         }
 
@@ -160,10 +199,10 @@ public class TylerAutonomous extends LinearOpMode {
      */
     private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-            "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-       tfodParameters.minResultConfidence = 0.6f;
-       tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-       tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
+        tfodParameters.minResultConfidence = 0.6f;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 }

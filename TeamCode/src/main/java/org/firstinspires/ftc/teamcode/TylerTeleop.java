@@ -99,7 +99,7 @@ public class TylerTeleop extends OpMode {
     public Servo fireServo = null;
     public Servo clawServo = null;
 
-    public BNO055IMU imu = null;
+    //public BNO055IMU imu = null;
 
     // Variables used to determine robot position on the field and range/bearing to target
     public double robotX = 0;             // X position in Field Centric Coordinates (in)
@@ -197,7 +197,7 @@ public class TylerTeleop extends OpMode {
 
 
             //init imu
-            imu = robot.imu;
+            //imu = robot.imu;
         }
         initVuforiaNavigation();
 
@@ -286,7 +286,7 @@ public class TylerTeleop extends OpMode {
             fireServo.setPosition(FIRE_STANDBY_SERVO);
         }
         if (gamepad1.left_trigger > 0.5) {
-            ringShooterMotor.setVelocity(1200);
+            ringShooterMotor.setVelocity(1220);
             telemetry.addData("shooterVelocity", ringShooterMotor.getVelocity());
         } else if (gamepad1.right_trigger > 0.5) {
             ringShooterMotor.setVelocity(1150);
@@ -349,14 +349,14 @@ public class TylerTeleop extends OpMode {
 
 
     //returns the current heading of the robot relative to the starting position
-    public double getHeading() {
-        return imu.getAngularOrientation().firstAngle;
-    }
+    //public double getHeading() {
+    //    return imu.getAngularOrientation().firstAngle;
+    //}
 
     //find difference between where we want to go and where we are
-    public double getError(double desiredHeading) {
-        return desiredHeading - getHeading();
-    }
+    //public double getError(double desiredHeading) {
+     //   return desiredHeading - getHeading();
+    //}
 
     public void moveBot(double drive, double rotate, double strafe, double scaleFactor) {
         // This module takes inputs, normalizes them to DRIVE_SPEED, and drives the motors
