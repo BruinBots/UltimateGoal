@@ -30,8 +30,11 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -39,6 +42,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 
 import java.util.List;
 
@@ -47,6 +51,10 @@ import java.util.List;
 @TeleOp(name = "TylerAutonomous", group = "Autonomous")
 //@Disabled
 public class TylerAutonomous extends LinearOpMode {
+    public double timeScanning = 5; //time spent trying to find the highest confidence recognition
+    public double distanceToMoveForwardToShoot = 72;
+    public Pose2d startingPose = new Pose2d(-49.25, 9, 0);
+
     private ElapsedTime runtime = new ElapsedTime();
 
     private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
@@ -64,6 +72,10 @@ public class TylerAutonomous extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+
+        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
         initVuforia();
@@ -75,16 +87,6 @@ public class TylerAutonomous extends LinearOpMode {
          **/
         if (tfod != null) {
             tfod.activate();
-
-            // The TensorFlow software will scale the input images from the camera to a lower resolution.
-            // This can result in lower detection accuracy at longer distances (> 55cm or 22").
-            // If your target is at distance greater than 50 cm (20") you can adjust the magnification value
-            // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
-            // should be set to the value of the images used to create the TensorFlow Object Detection model
-            // (typically 1.78 or 16/9).
-
-            // Uncomment the following line if you want to adjust the magnification and/or the aspect ratio of the input images.
-            //tfod.setZoom(2.5, 1.78);
         }
 
         /** Wait for the game to begin */
@@ -98,8 +100,8 @@ public class TylerAutonomous extends LinearOpMode {
         double highestConfidence = 0;
         String highestConfidenceLabel = "None";
 
-        if (opModeIsActive()) {
-            while (opModeIsActive() && runtime.time() < 5) {
+        if (opModeIsActive() && !isStopRequested()) {
+            while (opModeIsActive() && runtime.time() < timeScanning) {
                 if (tfod != null) {
                     // getUpdatedRecognitions() will return null if no new information is available since
                     // the last time that call was made.
@@ -114,6 +116,19 @@ public class TylerAutonomous extends LinearOpMode {
                         }
                     }
                 }
+            }
+            if (runtime.time() >= timeScanning) {
+                Trajectory trajectory = drive.trajectoryBuilder(startingPose)
+                        .forward(distanceToMoveForwardToShoot)
+                        .build();
+
+                drive.followTrajectory(trajectory);
+
+                Pose2d poseEstimate = drive.getPoseEstimate();
+                telemetry.addData("finalX", poseEstimate.getX());
+                telemetry.addData("finalY", poseEstimate.getY());
+                telemetry.addData("finalHeading", poseEstimate.getHeading());
+                telemetry.update();
             }
         }
 

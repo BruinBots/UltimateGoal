@@ -82,9 +82,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name = "Tyler TeleOp Testing", group = "Iterative Opmode")
+@TeleOp(name = "TylerTeleOp", group = "Iterative Opmode")
 //@Disabled
-public class TylerTeleopTesting extends OpMode {
+public class TylerTeleop extends OpMode {
     // Declare OpMode members.
     public ElapsedTime runtime = new ElapsedTime();
     public DcMotor leftFrontDrive = null;
@@ -304,7 +304,7 @@ public class TylerTeleopTesting extends OpMode {
                 wobbleMotor.setTargetPosition(WOBBLE_CARRY);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 wobbleMotor.setPower(.4);
-            } else if (gamepad1.dpad_left) {
+            } else if (gamepad1.dpad_up) {
                 wobbleMotor.setTargetPosition(WOBBLE_OVER_WALL);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 wobbleMotor.setPower(.4);
