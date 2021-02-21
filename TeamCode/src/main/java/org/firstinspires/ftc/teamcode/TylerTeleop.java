@@ -121,7 +121,7 @@ public class TylerTeleop extends OpMode {
     public static double FIRE_SERVO = 1;         // Position for the servo when firing a ring
     public final double CLAW_STANDBY_SERVO = 0;
     public final double CLAW_GRAB = 1;
-    public static int WOBBLE_GRAB = -900;     // Position for grabbing the wobble goal off the field
+    public static int WOBBLE_GRAB = -950;     // Position for grabbing the wobble goal off the field
     public static int WOBBLE_OVER_WALL = -450; // Position for raising the wobble goal over the wall
     public static int WOBBLE_CARRY = -630;     // POsition for carrying the wobble goal to the wall
     public double lastwheelSpeeds[] = new double[4];     // Tracks the last power sent to the wheels to assist in ramping power
@@ -295,7 +295,7 @@ public class TylerTeleop extends OpMode {
             ringShooterMotor.setPower(0);
 
         // Wobble Goal acions here
-        if (gamepad1.dpad_left || gamepad1.dpad_right || gamepad1.dpad_left || gamepad1.left_stick_button || gamepad1.right_stick_button) {
+        if (gamepad1.dpad_up || gamepad1.dpad_right || gamepad1.dpad_left || gamepad1.left_stick_button || gamepad1.right_stick_button) {
             if (gamepad1.dpad_left) {
                 wobbleMotor.setTargetPosition(WOBBLE_GRAB);
                 wobbleMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
